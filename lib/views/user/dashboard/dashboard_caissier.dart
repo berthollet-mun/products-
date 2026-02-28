@@ -30,10 +30,10 @@ class _DashboardCaissierState extends State<DashboardCaissier> {
       value:
           SystemUiOverlayStyle.light, // Barre d'état (heure/batterie) en blanc
       child: Scaffold(
-        backgroundColor: Colors.black, // Fond du Scaffold en noir
+        backgroundColor: const Color(0xFF1E0701), // Fond du Scaffold en noir
 
         appBar: AppBar(
-          backgroundColor: Colors.black,
+          backgroundColor: const Color(0xFF1E0701),
           elevation: 0,
           centerTitle: false,
           title: const Text(
@@ -62,7 +62,7 @@ class _DashboardCaissierState extends State<DashboardCaissier> {
           onTap: (index) => setState(() => _currentIndex = index),
 
           // --- CONFIGURATION DARK DESIGN ---
-          backgroundColor: Colors.black, // Fond de la barre noir
+          backgroundColor: const Color(0xFF1E0701), // Fond de la barre noir
           type: BottomNavigationBarType.fixed, // Bloque la couleur de fond
           selectedItemColor: _primaryColor, // Icône active en bleu
           unselectedItemColor:

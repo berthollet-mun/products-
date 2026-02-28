@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/user_controller.dart';
 import '../../../models/user.dart';
+import '../../../routes/app_routes.dart';
 import '../../../utils/responsive_helper.dart';
-import 'admin_user_form_view.dart';
 
 class AdminUserListView extends StatelessWidget {
   const AdminUserListView({super.key});
@@ -73,11 +73,11 @@ class AdminUserListView extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.purple.shade700,
         child: const Icon(Icons.add),
-        onPressed: () {
-          Get.to(
-            () => const AdminUserFormView(),
-            transition: Transition.rightToLeft,
-          );
+        onPressed: () async {
+          // Use named route to ensure binding is applied
+          await Get.toNamed(AppRoutes.adminUserForm);
+          // Refresh list when returning
+          controller.loadAllUsers();
         },
       ),
     );
@@ -168,11 +168,11 @@ class AdminUserListView extends StatelessWidget {
           itemBuilder: (context) => [
             PopupMenuItem(
               child: const Text('Modifier'),
-              onTap: () {
-                Get.to(
-                  () => AdminUserFormView(user: user),
-                  transition: Transition.rightToLeft,
-                );
+              onTap: () async {
+                // Use named route to ensure binding is applied
+                await Get.toNamed(AppRoutes.adminUserForm, arguments: user);
+                // Refresh list when returning
+                controller.loadAllUsers();
               },
             ),
             PopupMenuItem(

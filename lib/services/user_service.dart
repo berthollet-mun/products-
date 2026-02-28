@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:get/get.dart';
 import 'package:product/models/user.dart';
 import 'database_service.dart';
@@ -9,11 +11,23 @@ class UserService {
     _databaseService = Get.find<DatabaseService>();
   }
 
+  // Hachage du mot de passe
+  String _hashPassword(String password) {
+    var bytes = utf8.encode(password);
+    var digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
   // Ajouter un nouvel utilisateur
   Future<bool> addUser(User user) async {
     try {
       final db = _databaseService.database;
-      await db.insert('users', user.toMap());
+      // Hasher le mot de passe avant de sauvegarder
+      final hashedPassword = _hashPassword(user.password);
+      final userMap = user.toMap();
+      userMap['password'] = hashedPassword;
+
+      await db.insert('users', userMap);
       print('Utilisateur ${user.name} ajouté avec succès');
       return true;
     } catch (e) {
@@ -26,9 +40,14 @@ class UserService {
   Future<bool> updateUser(User user) async {
     try {
       final db = _databaseService.database;
+      // Hasher le mot de passe si nécessaire
+      final hashedPassword = _hashPassword(user.password);
+      final userMap = user.toMap();
+      userMap['password'] = hashedPassword;
+
       final rowsChanged = await db.update(
         'users',
-        user.toMap(),
+        userMap,
         where: 'id = ?',
         whereArgs: [user.id],
       );
@@ -147,4 +166,3 @@ class UserService {
     }
   }
 }
-

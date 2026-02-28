@@ -107,7 +107,7 @@ class _LoginViewState extends State<LoginView> {
                           color: Colors.white,
                         ),
                         filled: true,
-                        fillColor: Colors.white.withOpacity(0.1),
+                        fillColor: Colors.white.withValues(alpha: 0.1),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(
                             isDesktop ? 20 : 16,
@@ -167,7 +167,7 @@ class _LoginViewState extends State<LoginView> {
                             },
                           ),
                           filled: true,
-                          fillColor: Colors.white.withOpacity(0.1),
+                          fillColor: Colors.white.withValues(alpha: 0.1),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(
                               isDesktop ? 20 : 16,

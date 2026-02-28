@@ -28,12 +28,12 @@ class _DashboardAdminState extends State<DashboardAdmin> {
   Widget build(BuildContext context) {
     return Scaffold(
       // On met le fond du Scaffold parent en NOIR
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF1E0701),
 
       // Suppression de l'AppBar ici car elle est déjà définie dans DashboardHome
       // Si tu en veux une globale, utilise celle-ci :
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: const Color(0xFF1E0701),
         elevation: 0,
         title: const Text(
           'GESTION ADMIN',
@@ -52,7 +52,7 @@ class _DashboardAdminState extends State<DashboardAdmin> {
         onTap: (index) => setState(() => _currentIndex = index),
 
         // --- STYLE NOIR ET BLANC ---
-        backgroundColor: Colors.black, // Fond de la barre en noir
+        backgroundColor: const Color(0xFF1E0701), // Fond de la barre en noir
         type: BottomNavigationBarType.fixed, // Empêche le fond de devenir blanc
         selectedItemColor: _primaryColor, // Icône active en bleu
         unselectedItemColor: Colors.white54, // Icônes inactives en blanc cassé

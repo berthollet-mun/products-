@@ -20,9 +20,9 @@ class SaleDetailView extends StatelessWidget {
     final id = sale['id'] as String? ?? 'N/A';
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF1E0701),
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: const Color(0xFF1E0701),
         elevation: 0,
         title: Text(
           'Détails de la Vente',

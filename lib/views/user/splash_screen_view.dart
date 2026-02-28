@@ -72,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen> {
         statusBarBrightness: Brightness.dark, // Icônes blanches (iOS)
       ),
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: const Color(0xFF1E0701),
         // 2. SUPPRESSION de l'AppBar (elle créait le conflit)
         body: Stack(
           children: [

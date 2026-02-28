@@ -5,8 +5,7 @@ import '../../../models/user.dart';
 import '../../../utils/responsive_helper.dart';
 
 class AdminUserFormView extends StatefulWidget {
-  final User? user;
-  const AdminUserFormView({super.key, this.user});
+  const AdminUserFormView({super.key});
 
   @override
   State<AdminUserFormView> createState() => _AdminUserFormViewState();
@@ -17,18 +16,21 @@ class _AdminUserFormViewState extends State<AdminUserFormView> {
   late TextEditingController emailController;
   late TextEditingController passwordController;
   late TextEditingController confirmPasswordController;
-  String selectedRole = 'caissier';
+  late String selectedRole;
   final formKey = GlobalKey<FormState>();
   bool obscurePassword = true;
+  User? user;
 
   @override
   void initState() {
     super.initState();
-    nameController = TextEditingController(text: widget.user?.name ?? '');
-    emailController = TextEditingController(text: widget.user?.email ?? '');
+    // Get user from arguments if editing
+    user = Get.arguments as User?;
+    nameController = TextEditingController(text: user?.name ?? '');
+    emailController = TextEditingController(text: user?.email ?? '');
     passwordController = TextEditingController();
     confirmPasswordController = TextEditingController();
-    selectedRole = widget.user?.role ?? 'caissier';
+    selectedRole = user?.role ?? 'caissier';
   }
 
   @override
@@ -48,7 +50,7 @@ class _AdminUserFormViewState extends State<AdminUserFormView> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.user == null
+          Get.arguments == null
               ? 'Ajouter un utilisateur'
               : 'Modifier l\'utilisateur',
         ),
@@ -109,7 +111,7 @@ class _AdminUserFormViewState extends State<AdminUserFormView> {
                     },
                   ),
                   SizedBox(height: isDesktop ? 24 : (isTablet ? 20 : 16)),
-                  if (widget.user == null)
+                  if (user == null)
                     Column(
                       children: [
                         TextFormField(
@@ -248,9 +250,7 @@ class _AdminUserFormViewState extends State<AdminUserFormView> {
                       ),
                       onPressed: _handleSubmit,
                       child: Text(
-                        widget.user == null
-                            ? 'Créer l\'utilisateur'
-                            : 'Mettre à jour',
+                        user == null ? 'Créer l\'utilisateur' : 'Mettre à jour',
                         style: TextStyle(
                           fontSize: isDesktop ? 18 : 16,
                           color: Colors.white,
@@ -272,7 +272,7 @@ class _AdminUserFormViewState extends State<AdminUserFormView> {
 
     final controller = Get.find<UserController>();
 
-    if (widget.user == null) {
+    if (user == null) {
       // Create new user
       final success = await controller.addUser(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -291,7 +291,7 @@ class _AdminUserFormViewState extends State<AdminUserFormView> {
     } else {
       // Update existing user (only name and role)
       await controller.updateUser(
-        id: widget.user!.id,
+        id: user!.id,
         updateData: {
           'email': emailController.text.trim().toLowerCase(),
           'name': nameController.text.trim(),

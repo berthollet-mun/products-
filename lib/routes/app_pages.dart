@@ -33,6 +33,7 @@ class AppPages {
     GetPage(
       name: AppRoutes.adminDashboard,
       page: () => const AdminDashboardView(),
+      binding: AuthBinding(),
       transition: Transition.fadeIn,
     ),
 
@@ -40,6 +41,7 @@ class AppPages {
     GetPage(
       name: AppRoutes.cashierDashboard,
       page: () => const CashierDashboardView(),
+      binding: AuthBinding(),
       transition: Transition.fadeIn,
     ),
 
