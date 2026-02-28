@@ -54,9 +54,9 @@ class _UserFormState extends State<UserForm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Fond noir total
+      backgroundColor: const Color(0xFF1E0701), // Fond noir total
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: const Color(0xFF1E0701),
         elevation: 0,
         title: const Text(
           "Nouvel Utilisateur",

@@ -13,7 +13,7 @@ class DashboardHomeCaissier extends StatelessWidget {
     final isTablet = ResponsiveHelper.isTablet(context);
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF1E0701),
       body: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(

@@ -94,9 +94,9 @@ class _EditProductFormState extends State<EditProductForm> {
       final isBusy = controller.isLoading.value;
 
       return Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: const Color(0xFF1E0701),
         appBar: AppBar(
-          backgroundColor: Colors.black,
+          backgroundColor: const Color(0xFF1E0701),
           elevation: 0,
           title: Text(
             "Modifier le produit",

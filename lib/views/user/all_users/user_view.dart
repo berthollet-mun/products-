@@ -158,9 +158,9 @@ class UserView extends StatelessWidget {
     final isTablet = ResponsiveHelper.isTablet(context);
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF1E0701),
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: const Color(0xFF1E0701),
         elevation: 0,
         title: Text(
           'Utilisateurs',
