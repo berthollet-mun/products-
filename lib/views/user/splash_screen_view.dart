@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'login_view.dart';
+import 'package:get/get.dart';
+import '../../routes/app_routes.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -17,22 +17,25 @@ class _SplashScreenState extends State<SplashScreen> {
 
   final List<OnboardingPage> _pages = [
     OnboardingPage(
-      title: 'Gestion',
+      title: 'Gestion de Stock',
       description:
           'Gérez facilement tous vos produits avec une interface intuitive et moderne',
-      imagePath: 'assets/images/img1.jpg',
+      icon: Icons.inventory_2,
+      color: Colors.blue,
     ),
     OnboardingPage(
       title: 'Statistiques',
       description:
           'Suivez vos stocks et analysez vos données avec des graphiques détaillés',
-      imagePath: 'assets/images/img2.jpg',
+      icon: Icons.bar_chart,
+      color: Colors.green,
     ),
     OnboardingPage(
-      title: 'Contrôle',
+      title: 'Contrôle Total',
       description:
-          'Restez informé en temps réel et gardez le contrôle total sur votre inventaire',
-      imagePath: 'assets/images/img3.jpg',
+          'Restez informé en temps réel et gardez le contrôle sur votre inventaire',
+      icon: Icons.security,
+      color: Colors.orange,
     ),
   ];
 
@@ -56,9 +59,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _navigateToLogin() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const LoginView()),
-    );
+    Get.offAllNamed(AppRoutes.login);
   }
 
   @override
@@ -76,23 +77,19 @@ class _SplashScreenState extends State<SplashScreen> {
         // 2. SUPPRESSION de l'AppBar (elle créait le conflit)
         body: Stack(
           children: [
-            // IMAGE DE FOND
+            // GRADIENT BACKGROUND
             Positioned.fill(
-              child: AnimatedSwitcher(
+              child: AnimatedContainer(
                 duration: const Duration(milliseconds: 500),
-                child: Container(
-                  key: ValueKey<int>(_currentPage),
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage(_pages[_currentPage].imagePath),
-                      fit: BoxFit.cover,
-                      colorFilter: ColorFilter.mode(
-                        Colors.black.withValues(
-                          alpha: 0.7,
-                        ), // Important pour que le blanc des icônes ressorte
-                        BlendMode.darken,
-                      ),
-                    ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      _pages[_currentPage].color.withValues(alpha: 0.3),
+                      const Color(0xFF1E0701),
+                      const Color(0xFF1E0701),
+                    ],
                   ),
                 ),
               ),
@@ -129,11 +126,34 @@ class _SplashScreenState extends State<SplashScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Spacer(flex: 3),
+                            const Spacer(flex: 2),
+                            // LARGE ICON
+                            Container(
+                              width: 150,
+                              height: 150,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _pages[index].color.withValues(
+                                  alpha: 0.2,
+                                ),
+                                border: Border.all(
+                                  color: _pages[index].color.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                  width: 2,
+                                ),
+                              ),
+                              child: Icon(
+                                _pages[index].icon,
+                                size: 80,
+                                color: _pages[index].color,
+                              ),
+                            ),
+                            const SizedBox(height: 40),
                             Text(
                               _pages[index].title,
                               style: const TextStyle(
-                                fontSize: 36,
+                                fontSize: 32,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
@@ -149,7 +169,7 @@ class _SplashScreenState extends State<SplashScreen> {
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            const Spacer(flex: 1),
+                            const Spacer(flex: 2),
                           ],
                         ),
                       );
@@ -160,7 +180,10 @@ class _SplashScreenState extends State<SplashScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
                     _pages.length,
-                    (index) => _buildPageIndicator(index == _currentPage),
+                    (index) => _buildPageIndicator(
+                      index == _currentPage,
+                      _pages[index].color,
+                    ),
                   ),
                 ),
                 Padding(
@@ -174,7 +197,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     child: ElevatedButton(
                       onPressed: _nextPage,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: darkBlue,
+                        backgroundColor: _pages[_currentPage].color,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -201,14 +224,14 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 
-  Widget _buildPageIndicator(bool isActive) {
+  Widget _buildPageIndicator(bool isActive, Color color) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.symmetric(horizontal: 4),
       width: isActive ? 24 : 8,
       height: 8,
       decoration: BoxDecoration(
-        color: isActive ? Colors.white : Colors.white38,
+        color: isActive ? color : Colors.white38,
         borderRadius: BorderRadius.circular(4),
       ),
     );
@@ -218,10 +241,12 @@ class _SplashScreenState extends State<SplashScreen> {
 class OnboardingPage {
   final String title;
   final String description;
-  final String imagePath;
+  final IconData icon;
+  final Color color;
   OnboardingPage({
     required this.title,
     required this.description,
-    required this.imagePath,
+    required this.icon,
+    required this.color,
   });
 }

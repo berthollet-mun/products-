@@ -46,11 +46,7 @@ class ResponsiveContainer extends StatelessWidget {
   final Widget child;
   final EdgeInsets? padding;
 
-  const ResponsiveContainer({
-    super.key,
-    required this.child,
-    this.padding,
-  });
+  const ResponsiveContainer({super.key, required this.child, this.padding});
 
   @override
   Widget build(BuildContext context) {
@@ -115,16 +111,20 @@ class ResponsiveCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveHelper.isDesktop(context);
     final isTablet = ResponsiveHelper.isTablet(context);
-    
+
     return Card(
       elevation: isDesktop ? elevation + 2 : elevation,
       color: color,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(isDesktop ? 16 : (isTablet ? 12 : 8)),
+        borderRadius: BorderRadius.circular(
+          isDesktop ? 16 : (isTablet ? 12 : 8),
+        ),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(isDesktop ? 16 : (isTablet ? 12 : 8)),
+        borderRadius: BorderRadius.circular(
+          isDesktop ? 16 : (isTablet ? 12 : 8),
+        ),
         child: Padding(
           padding: EdgeInsets.all(isDesktop ? 24 : (isTablet ? 20 : 16)),
           child: child,

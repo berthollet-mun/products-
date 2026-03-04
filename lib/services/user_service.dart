@@ -5,11 +5,10 @@ import 'package:product/models/user.dart';
 import 'database_service.dart';
 
 class UserService {
-  late final DatabaseService _databaseService;
+  UserService({DatabaseService? databaseService})
+    : _databaseService = databaseService ?? Get.find<DatabaseService>();
 
-  UserService() {
-    _databaseService = Get.find<DatabaseService>();
-  }
+  final DatabaseService _databaseService;
 
   // Hachage du mot de passe
   String _hashPassword(String password) {

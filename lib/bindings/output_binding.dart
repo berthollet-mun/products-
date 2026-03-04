@@ -6,8 +6,23 @@ import '../services/product_service.dart';
 class OutputBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<OutputService>(() => OutputService());
-    Get.lazyPut<ProductService>(() => ProductService());
-    Get.lazyPut<OutputController>(() => OutputController());
+    if (!Get.isRegistered<ProductService>()) {
+      Get.lazyPut<ProductService>(() => ProductService(), fenix: true);
+    }
+    if (!Get.isRegistered<OutputService>()) {
+      Get.lazyPut<OutputService>(
+        () => OutputService(productService: Get.find<ProductService>()),
+        fenix: true,
+      );
+    }
+    if (!Get.isRegistered<OutputController>()) {
+      Get.lazyPut<OutputController>(
+        () => OutputController(
+          outputService: Get.find<OutputService>(),
+          productService: Get.find<ProductService>(),
+        ),
+        fenix: true,
+      );
+    }
   }
 }

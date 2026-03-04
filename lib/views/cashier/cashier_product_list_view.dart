@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controllers/product_controller.dart';
-import '../../../models/product.dart';
-import '../../../utils/responsive_helper.dart';
+import '../../controllers/product_controller.dart';
+import '../../models/product.dart';
+import '../../utils/responsive_helper.dart';
+import '../common/role_guard.dart';
 
 class CashierProductListView extends StatelessWidget {
   const CashierProductListView({super.key});
@@ -13,63 +14,74 @@ class CashierProductListView extends StatelessWidget {
     final isDesktop = ResponsiveHelper.isDesktop(context);
     final isTablet = ResponsiveHelper.isTablet(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Catalogue des Produits'),
-        elevation: 0,
-        backgroundColor: Colors.teal.shade700,
-      ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
+    return RoleGuard(
+      requiredRole: 'caissier',
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Catalogue des Produits'),
+          elevation: 0,
+          backgroundColor: Colors.teal.shade700,
+        ),
+        body: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-        if (controller.products.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.inventory_2,
-                  size: isDesktop ? 120 : (isTablet ? 100 : 80),
-                  color: Colors.grey.shade400,
-                ),
-                SizedBox(height: isDesktop ? 24 : (isTablet ? 20 : 16)),
-                Text(
-                  'Aucun produit disponible',
-                  style: TextStyle(
-                    fontSize: isDesktop ? 24 : (isTablet ? 20 : 18),
-                    color: Colors.grey,
+          if (controller.products.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.inventory_2,
+                    size: isDesktop ? 120 : (isTablet ? 100 : 80),
+                    color: Colors.grey.shade400,
                   ),
-                ),
-              ],
+                  SizedBox(height: isDesktop ? 24 : (isTablet ? 20 : 16)),
+                  Text(
+                    'Aucun produit disponible',
+                    style: TextStyle(
+                      fontSize: isDesktop ? 24 : (isTablet ? 20 : 18),
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: ResponsiveHelper.getMaxContentWidth(context),
+              ),
+              child: ListView.builder(
+                padding: EdgeInsets.all(isDesktop ? 24 : (isTablet ? 16 : 8)),
+                itemCount: controller.products.length,
+                itemBuilder: (context, index) {
+                  final product = controller.products[index];
+                  return _buildProductCard(
+                    product,
+                    context,
+                    isDesktop,
+                    isTablet,
+                  );
+                },
+              ),
             ),
           );
-        }
-
-        return Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: ResponsiveHelper.getMaxContentWidth(context),
-            ),
-            child: ListView.builder(
-              padding: EdgeInsets.all(isDesktop ? 24 : (isTablet ? 16 : 8)),
-              itemCount: controller.products.length,
-              itemBuilder: (context, index) {
-                final product = controller.products[index];
-                return _buildProductCard(product, context, isDesktop, isTablet);
-              },
-            ),
-          ),
-        );
-      }),
+        }),
+      ),
     );
   }
 
-  Widget _buildProductCard(Product product, BuildContext context, bool isDesktop, bool isTablet) {
-    final isLowStock = product.quantity <= 5;
+  Widget _buildProductCard(
+    Product product,
+    BuildContext context,
+    bool isDesktop,
+    bool isTablet,
+  ) {
+    final isLowStock = product.quantity <= product.stockMinimum;
 
     return Card(
       margin: EdgeInsets.symmetric(
@@ -121,7 +133,9 @@ class CashierProductListView extends StatelessWidget {
                   style: TextStyle(
                     fontSize: isDesktop ? 16 : 14,
                     color: isLowStock ? Colors.red : Colors.green,
-                    fontWeight: isLowStock ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isLowStock
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -143,7 +157,9 @@ class CashierProductListView extends StatelessWidget {
             vertical: isDesktop ? 8 : 6,
           ),
           decoration: BoxDecoration(
-            color: product.quantity > 0 ? Colors.green.shade100 : Colors.red.shade100,
+            color: product.quantity > 0
+                ? Colors.green.shade100
+                : Colors.red.shade100,
             borderRadius: BorderRadius.circular(isDesktop ? 8 : 6),
           ),
           child: Text(
@@ -151,7 +167,9 @@ class CashierProductListView extends StatelessWidget {
             style: TextStyle(
               fontSize: isDesktop ? 14 : 12,
               fontWeight: FontWeight.bold,
-              color: product.quantity > 0 ? Colors.green.shade700 : Colors.red.shade700,
+              color: product.quantity > 0
+                  ? Colors.green.shade700
+                  : Colors.red.shade700,
             ),
           ),
         ),

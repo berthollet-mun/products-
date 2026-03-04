@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../controllers/product_controller.dart';
 import '../../../models/product.dart';
 import '../../../utils/responsive_helper.dart';
+import '../../common/role_guard.dart';
 import 'admin_product_form_view.dart';
 
 class AdminProductListView extends StatelessWidget {
@@ -14,71 +15,74 @@ class AdminProductListView extends StatelessWidget {
     final isDesktop = ResponsiveHelper.isDesktop(context);
     final isTablet = ResponsiveHelper.isTablet(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gestion des Produits'),
-        elevation: 0,
-        backgroundColor: Colors.blue.shade700,
-      ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    return RoleGuard(
+      requiredRole: 'admin',
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Gestion des Produits'),
+          elevation: 0,
+          backgroundColor: Colors.blue.shade700,
+        ),
+        body: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-        if (controller.products.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.inventory_2,
-                  size: isDesktop ? 120 : (isTablet ? 100 : 80),
-                  color: Colors.grey.shade400,
-                ),
-                SizedBox(height: isDesktop ? 24 : (isTablet ? 20 : 16)),
-                Text(
-                  'Aucun produit',
-                  style: TextStyle(
-                    fontSize: isDesktop ? 24 : (isTablet ? 20 : 18),
-                    color: Colors.grey,
+          if (controller.products.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.inventory_2,
+                    size: isDesktop ? 120 : (isTablet ? 100 : 80),
+                    color: Colors.grey.shade400,
                   ),
-                ),
-              ],
-            ),
-          );
-        }
+                  SizedBox(height: isDesktop ? 24 : (isTablet ? 20 : 16)),
+                  Text(
+                    'Aucun produit',
+                    style: TextStyle(
+                      fontSize: isDesktop ? 24 : (isTablet ? 20 : 18),
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
 
-        return Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: ResponsiveHelper.getMaxContentWidth(context),
+          return Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: ResponsiveHelper.getMaxContentWidth(context),
+              ),
+              child: ListView.builder(
+                padding: EdgeInsets.all(isDesktop ? 24 : (isTablet ? 16 : 8)),
+                itemCount: controller.products.length,
+                itemBuilder: (context, index) {
+                  final product = controller.products[index];
+                  return _buildProductCard(
+                    product,
+                    controller,
+                    context,
+                    isDesktop,
+                    isTablet,
+                  );
+                },
+              ),
             ),
-            child: ListView.builder(
-              padding: EdgeInsets.all(isDesktop ? 24 : (isTablet ? 16 : 8)),
-              itemCount: controller.products.length,
-              itemBuilder: (context, index) {
-                final product = controller.products[index];
-                return _buildProductCard(
-                  product,
-                  controller,
-                  context,
-                  isDesktop,
-                  isTablet,
-                );
-              },
-            ),
-          ),
-        );
-      }),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.blue.shade700,
-        child: const Icon(Icons.add),
-        onPressed: () {
-          Get.to(
-            () => const AdminProductFormView(),
-            transition: Transition.rightToLeft,
           );
-        },
+        }),
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: Colors.blue.shade700,
+          child: const Icon(Icons.add),
+          onPressed: () {
+            Get.to(
+              () => const AdminProductFormView(),
+              transition: Transition.rightToLeft,
+            );
+          },
+        ),
       ),
     );
   }
@@ -134,7 +138,7 @@ class AdminProductListView extends StatelessWidget {
               style: TextStyle(fontSize: isDesktop ? 16 : 14),
             ),
             Text(
-              'Stock: ${product.quantity} | Prix: ${product.price}€',
+              'Stock: ${product.quantity} (min: ${product.stockMinimum}) | Prix: ${product.price} EUR',
               style: TextStyle(fontSize: isDesktop ? 16 : 14),
             ),
           ],

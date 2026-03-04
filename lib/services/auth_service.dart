@@ -7,11 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'database_service.dart';
 
 class AuthService {
-  late final DatabaseService _databaseService;
+  AuthService({DatabaseService? databaseService})
+    : _databaseService = databaseService ?? Get.find<DatabaseService>();
 
-  AuthService() {
-    _databaseService = Get.find<DatabaseService>();
-  }
+  final DatabaseService _databaseService;
 
   // Hachage du mot de passe
   String _hashPassword(String password) {
@@ -112,17 +111,14 @@ class AuthService {
       final db = _databaseService.database;
       final hashedPassword = _hashPassword(password);
 
-      await db.insert(
-        'users',
-        {
-          'id': id,
-          'email': email,
-          'password': hashedPassword,
-          'role': role,
-          'name': name,
-          'profileImage': profileImage,
-        },
-      );
+      await db.insert('users', {
+        'id': id,
+        'email': email,
+        'password': hashedPassword,
+        'role': role,
+        'name': name,
+        'profileImage': profileImage,
+      });
 
       return true;
     } catch (e) {
@@ -139,10 +135,7 @@ class AuthService {
 
       final rowsChanged = await db.update(
         'users',
-        {
-          ...user.toMap(),
-          'password': hashedPassword,
-        },
+        {...user.toMap(), 'password': hashedPassword},
         where: 'id = ?',
         whereArgs: [user.id],
       );
@@ -203,4 +196,3 @@ class AuthService {
     }
   }
 }
-

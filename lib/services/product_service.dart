@@ -4,11 +4,10 @@ import '../models/product.dart';
 import 'database_service.dart';
 
 class ProductService {
-  late final DatabaseService _databaseService;
+  ProductService({DatabaseService? databaseService})
+    : _databaseService = databaseService ?? Get.find<DatabaseService>();
 
-  ProductService() {
-    _databaseService = Get.find<DatabaseService>();
-  }
+  final DatabaseService _databaseService;
 
   // CHARGER TOUS LES PRODUITS
   Future<List<Product>> getAllProducts() async {
@@ -114,6 +113,10 @@ class ProductService {
 
   // METTRE À JOUR LE STOCK
   Future<bool> updateStock(String productId, int newQuantity) async {
+    if (newQuantity < 0) {
+      return false;
+    }
+
     try {
       final db = _databaseService.database;
       final rowsChanged = await db.update(
@@ -125,6 +128,50 @@ class ProductService {
       return rowsChanged > 0;
     } catch (e) {
       print("Erreur updateStock: $e");
+      return false;
+    }
+  }
+
+  Future<bool> incrementStock({
+    required String productId,
+    required int quantity,
+    DatabaseExecutor? executor,
+  }) async {
+    if (quantity <= 0) {
+      return false;
+    }
+
+    try {
+      final db = executor ?? _databaseService.database;
+      final rowsChanged = await db.rawUpdate(
+        'UPDATE products SET quantity = quantity + ? WHERE id = ?',
+        [quantity, productId],
+      );
+      return rowsChanged > 0;
+    } catch (e) {
+      print("Erreur incrementStock: $e");
+      return false;
+    }
+  }
+
+  Future<bool> decrementStock({
+    required String productId,
+    required int quantity,
+    DatabaseExecutor? executor,
+  }) async {
+    if (quantity <= 0) {
+      return false;
+    }
+
+    try {
+      final db = executor ?? _databaseService.database;
+      final rowsChanged = await db.rawUpdate(
+        'UPDATE products SET quantity = quantity - ? WHERE id = ? AND quantity >= ?',
+        [quantity, productId, quantity],
+      );
+      return rowsChanged > 0;
+    } catch (e) {
+      print("Erreur decrementStock: $e");
       return false;
     }
   }
@@ -174,8 +221,7 @@ class ProductService {
       final db = _databaseService.database;
       final List<Map<String, dynamic>> maps = await db.query(
         'products',
-        where: 'quantity <= ?',
-        whereArgs: [0],
+        where: 'quantity <= stock_minimum',
         orderBy: 'quantity ASC',
       );
       return List.generate(maps.length, (i) => Product.fromMap(maps[i]));
@@ -189,7 +235,9 @@ class ProductService {
   Future<int> getProductCount() async {
     try {
       final db = _databaseService.database;
-      final countMap = await db.rawQuery('SELECT COUNT(*) as count FROM products');
+      final countMap = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM products',
+      );
       return Sqflite.firstIntValue(countMap) ?? 0;
     } catch (e) {
       print("Erreur getProductCount: $e");

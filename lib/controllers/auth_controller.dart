@@ -1,14 +1,18 @@
 import 'package:get/get.dart';
 import 'package:product/models/user.dart';
+import 'package:product/routes/app_routes.dart';
 import 'package:product/services/auth_service.dart';
 
 class AuthController extends GetxController {
-  final AuthService _authService = AuthService();
+  AuthController({AuthService? authService})
+    : _authService = authService ?? Get.find<AuthService>();
 
-  late User? currentUser;
-  RxString currentRole = 'caissier'.obs;
-  RxBool isLoading = false.obs;
-  RxBool isLoggedIn = false.obs;
+  final AuthService _authService;
+
+  final Rxn<User> currentUser = Rxn<User>();
+  final RxString currentRole = 'caissier'.obs;
+  final RxBool isLoading = true.obs;
+  final RxBool isLoggedIn = false.obs;
 
   @override
   void onInit() {
@@ -16,38 +20,33 @@ class AuthController extends GetxController {
     checkAuthStatus();
   }
 
-  // Vérifier si un utilisateur est connecté au démarrage
   Future<void> checkAuthStatus() async {
-    final loggedIn = await _authService.isLoggedIn();
-    if (loggedIn) {
-      currentUser = await _authService.getCurrentUser();
-      final role = await _authService.getCurrentUserRole();
-      currentRole.value = role ?? 'caissier';
-      isLoggedIn.value = true;
+    try {
+      isLoading.value = true;
+
+      final loggedIn = await _authService.isLoggedIn();
+      if (!loggedIn) {
+        isLoggedIn.value = false;
+        currentUser.value = null;
+        currentRole.value = 'caissier';
+        return;
+      }
+
+      currentUser.value = await _authService.getCurrentUser();
+      currentRole.value =
+          (await _authService.getCurrentUserRole()) ?? 'caissier';
+      isLoggedIn.value = currentUser.value != null;
+    } finally {
+      isLoading.value = false;
     }
   }
 
-  // Connexion d'un utilisateur
   Future<bool> login(String email, String password) async {
     try {
       isLoading.value = true;
 
       final user = await _authService.login(email.trim(), password.trim());
-
-      if (user != null) {
-        currentUser = user;
-        currentRole.value = user.role;
-        isLoggedIn.value = true;
-
-        // Redirection basée sur le rôle
-        if (user.role == 'admin') {
-          Get.offAllNamed('/admin-dashboard');
-        } else {
-          Get.offAllNamed('/cashier-dashboard');
-        }
-
-        return true;
-      } else {
+      if (user == null) {
         Get.snackbar(
           'Erreur',
           'Email ou mot de passe incorrect',
@@ -55,6 +54,16 @@ class AuthController extends GetxController {
         );
         return false;
       }
+
+      currentUser.value = user;
+      currentRole.value = user.role;
+      isLoggedIn.value = true;
+
+      final route = user.role == 'admin'
+          ? AppRoutes.adminDashboard
+          : AppRoutes.cashierDashboard;
+      Get.offAllNamed(route);
+      return true;
     } catch (e) {
       Get.snackbar(
         'Erreur',
@@ -67,14 +76,13 @@ class AuthController extends GetxController {
     }
   }
 
-  // Déconnexion d'un utilisateur
   Future<void> logout() async {
     try {
       await _authService.logout();
-      currentUser = null;
+      currentUser.value = null;
       currentRole.value = 'caissier';
       isLoggedIn.value = false;
-      Get.offAllNamed('/login');
+      Get.offAllNamed(AppRoutes.login);
     } catch (e) {
       Get.snackbar(
         'Erreur',
@@ -84,10 +92,6 @@ class AuthController extends GetxController {
     }
   }
 
-  // Vérifier si l'utilisateur est administrateur
   bool get isAdmin => currentRole.value == 'admin';
-
-  // Vérifier si l'utilisateur est caissier
   bool get isCashier => currentRole.value == 'caissier';
 }
-

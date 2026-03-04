@@ -4,6 +4,7 @@ import '../../../controllers/user_controller.dart';
 import '../../../models/user.dart';
 import '../../../routes/app_routes.dart';
 import '../../../utils/responsive_helper.dart';
+import '../../common/role_guard.dart';
 
 class AdminUserListView extends StatelessWidget {
   const AdminUserListView({super.key});
@@ -14,71 +15,74 @@ class AdminUserListView extends StatelessWidget {
     final isDesktop = ResponsiveHelper.isDesktop(context);
     final isTablet = ResponsiveHelper.isTablet(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gestion des Utilisateurs'),
-        elevation: 0,
-        backgroundColor: Colors.purple.shade700,
-      ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    return RoleGuard(
+      requiredRole: 'admin',
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Gestion des Utilisateurs'),
+          elevation: 0,
+          backgroundColor: Colors.purple.shade700,
+        ),
+        body: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-        if (controller.users.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.people,
-                  size: isDesktop ? 120 : (isTablet ? 100 : 80),
-                  color: Colors.grey.shade400,
-                ),
-                SizedBox(height: isDesktop ? 24 : (isTablet ? 20 : 16)),
-                Text(
-                  'Aucun utilisateur',
-                  style: TextStyle(
-                    fontSize: isDesktop ? 24 : (isTablet ? 20 : 18),
-                    color: Colors.grey,
+          if (controller.users.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.people,
+                    size: isDesktop ? 120 : (isTablet ? 100 : 80),
+                    color: Colors.grey.shade400,
                   ),
-                ),
-              ],
+                  SizedBox(height: isDesktop ? 24 : (isTablet ? 20 : 16)),
+                  Text(
+                    'Aucun utilisateur',
+                    style: TextStyle(
+                      fontSize: isDesktop ? 24 : (isTablet ? 20 : 18),
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: ResponsiveHelper.getMaxContentWidth(context),
+              ),
+              child: ListView.builder(
+                padding: EdgeInsets.all(isDesktop ? 24 : (isTablet ? 16 : 8)),
+                itemCount: controller.users.length,
+                itemBuilder: (context, index) {
+                  final user = controller.users[index];
+                  return _buildUserCard(
+                    user,
+                    controller,
+                    context,
+                    isDesktop,
+                    isTablet,
+                  );
+                },
+              ),
             ),
           );
-        }
-
-        return Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: ResponsiveHelper.getMaxContentWidth(context),
-            ),
-            child: ListView.builder(
-              padding: EdgeInsets.all(isDesktop ? 24 : (isTablet ? 16 : 8)),
-              itemCount: controller.users.length,
-              itemBuilder: (context, index) {
-                final user = controller.users[index];
-                return _buildUserCard(
-                  user,
-                  controller,
-                  context,
-                  isDesktop,
-                  isTablet,
-                );
-              },
-            ),
-          ),
-        );
-      }),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.purple.shade700,
-        child: const Icon(Icons.add),
-        onPressed: () async {
-          // Use named route to ensure binding is applied
-          await Get.toNamed(AppRoutes.adminUserForm);
-          // Refresh list when returning
-          controller.loadAllUsers();
-        },
+        }),
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: Colors.purple.shade700,
+          child: const Icon(Icons.add),
+          onPressed: () async {
+            // Use named route to ensure binding is applied
+            await Get.toNamed(AppRoutes.adminUserForm);
+            // Refresh list when returning
+            controller.loadAllUsers();
+          },
+        ),
       ),
     );
   }

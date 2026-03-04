@@ -5,36 +5,33 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 class DatabaseHelper {
-  static final DatabaseHelper _instance = DatabaseHelper._internal();
-  factory DatabaseHelper() => _instance;
   DatabaseHelper._internal();
 
-  static Database? _database;
+  static final DatabaseHelper _instance = DatabaseHelper._internal();
+  factory DatabaseHelper() => _instance;
 
-  // Getter pour recupere l'intance de la base de donnee
+  static Database? _database;
+  static const _dbVersion = 2;
 
   Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await initDatabase();
+    if (_database != null) {
+      return _database!;
+    }
+    _database = await _initDatabase();
     return _database!;
   }
 
-  // initialisation de l'instance de la base de donnee
-  Future<Database> initDatabase() async {
+  Future<Database> _initDatabase() async {
     final path = join(await getDatabasesPath(), 'product.db');
-    return openDatabase(path, version: 1, onCreate: _onCreate);
+    return openDatabase(
+      path,
+      version: _dbVersion,
+      onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
+    );
   }
 
-  // Méthode pour hacher un mot de passe
-  String _hashPassword(String password) {
-    var bytes = utf8.encode(password); // Convertir en bytes
-    var digest = sha256.convert(bytes); // Hasher avec SHA-256
-    return digest.toString(); // Retourner le hash en string
-  }
-
-  // creation de la base de donnee
   Future<void> _onCreate(Database db, int version) async {
-    // Table des utilisateurs
     await db.execute('''
       CREATE TABLE users (
         id TEXT PRIMARY KEY,
@@ -46,7 +43,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Table des produits
     await db.execute('''
       CREATE TABLE products (
         id TEXT PRIMARY KEY,
@@ -54,11 +50,12 @@ class DatabaseHelper {
         name TEXT NOT NULL,
         price REAL NOT NULL CHECK (price >= 0),
         quantity INTEGER NOT NULL DEFAULT 0 CHECK (quantity >= 0),
+        stock_minimum INTEGER NOT NULL DEFAULT 5 CHECK (stock_minimum >= 0),
+        created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
         description TEXT
       )
     ''');
 
-    // Table des entrées de stock
     await db.execute('''
       CREATE TABLE stock_entries (
         id TEXT PRIMARY KEY,
@@ -71,7 +68,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Table des sorties de stock (ventes)
     await db.execute('''
       CREATE TABLE stock_outputs (
         id TEXT PRIMARY KEY,
@@ -84,7 +80,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Table des ventes (entête) - optionnel pour compatibilité
     await db.execute('''
       CREATE TABLE sales (
         id TEXT PRIMARY KEY,
@@ -93,7 +88,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Table des détails de vente (lignes de vente)
     await db.execute('''
       CREATE TABLE sale_items (
         id TEXT PRIMARY KEY,
@@ -106,70 +100,79 @@ class DatabaseHelper {
       )
     ''');
 
-    print("Base de données et tables créées avec succès!");
-
     await _createAdminUser(db);
-
-    print("Base créée et admin ajouté !");
   }
 
-  // Méthode pour créer l'utilisateur admin
-  Future<void> _createAdminUser(Database db) async {
-    try {
-      // Vérifier d'abord si l'admin existe déjà
-      List<Map<String, dynamic>> existingAdmin = await db.query(
-        'users',
-        where: 'email = ?',
-        whereArgs: ['admin@local.com'],
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await _addColumnIfMissing(
+        db: db,
+        tableName: 'products',
+        columnName: 'stock_minimum',
+        sql:
+            'ALTER TABLE products ADD COLUMN stock_minimum INTEGER NOT NULL DEFAULT 5',
       );
 
-      // Si l'admin n'existe pas, le créer
-      if (existingAdmin.isEmpty) {
-        String hashedPassword = _hashPassword(
-          '@admin123',
-        ); // Hash du mot de passe
+      await _addColumnIfMissing(
+        db: db,
+        tableName: 'products',
+        columnName: 'created_at',
+        sql:
+            "ALTER TABLE products ADD COLUMN created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))",
+      );
 
-        await db.insert(
-          'users',
-          {
-            'id': 'admin-id-001', // id obligatoire
-            'email': 'admin@local.com', // Connexion via email
-            'password': hashedPassword, // Mot de passe hashé
-            'role': 'admin', // Rôle pour accès total
-            'name': 'Administrateur', // Nom affiché
-            'profileImage': null, // Optionnel
-          },
-          conflictAlgorithm: ConflictAlgorithm.ignore, // Ignorer si doublon
-        );
-
-        print("Utilisateur admin créé avec succès!");
-      } else {
-        print("L'utilisateur admin existe déjà");
-      }
-    } catch (e) {
-      print("Erreur lors de la création de l'admin: $e");
+      await db.execute(
+        "UPDATE products SET created_at = datetime('now', 'localtime') WHERE created_at IS NULL OR created_at = ''",
+      );
     }
   }
 
-  Future<void> printAdminInfo() async {
-    final db = await database;
-    final result = await db.query(
+  Future<void> _addColumnIfMissing({
+    required Database db,
+    required String tableName,
+    required String columnName,
+    required String sql,
+  }) async {
+    final columns = await db.rawQuery('PRAGMA table_info($tableName)');
+    final exists = columns.any((column) => column['name'] == columnName);
+    if (!exists) {
+      await db.execute(sql);
+    }
+  }
+
+  String _hashPassword(String password) {
+    final bytes = utf8.encode(password);
+    return sha256.convert(bytes).toString();
+  }
+
+  Future<void> _createAdminUser(Database db) async {
+    final existing = await db.query(
       'users',
       where: 'email = ?',
       whereArgs: ['admin@local.com'],
     );
-    print("Admin en base: $result");
+    if (existing.isNotEmpty) {
+      return;
+    }
 
-    // Afficher le hash du mot de passe pour vérifier
-    final hashedPassword = sha256.convert(utf8.encode('@admin123')).toString();
-    print("Hash de '@admin123': $hashedPassword");
+    await db.insert('users', {
+      'id': 'admin-id-001',
+      'email': 'admin@local.com',
+      'password': _hashPassword('@admin123'),
+      'role': 'admin',
+      'name': 'Administrateur',
+      'profileImage': null,
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
-  // Fermeture de la connexion a la base de donnee
+  Future<void> printAdminInfo() async {
+    await database;
+  }
+
   Future<void> close() async {
     if (_database != null) {
       await _database!.close();
-      _database!;
+      _database = null;
     }
   }
 }

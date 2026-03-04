@@ -5,7 +5,14 @@ import '../services/user_service.dart';
 class UserBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<UserService>(() => UserService());
-    Get.lazyPut<UserController>(() => UserController());
+    if (!Get.isRegistered<UserService>()) {
+      Get.lazyPut<UserService>(() => UserService(), fenix: true);
+    }
+    if (!Get.isRegistered<UserController>()) {
+      Get.lazyPut<UserController>(
+        () => UserController(userService: Get.find<UserService>()),
+        fenix: true,
+      );
+    }
   }
 }

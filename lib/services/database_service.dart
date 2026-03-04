@@ -4,9 +4,9 @@ import '../database/database_helper.dart';
 
 class DatabaseService extends GetxService {
   static final DatabaseService _instance = DatabaseService._internal();
-  
+
   factory DatabaseService() => _instance;
-  
+
   DatabaseService._internal();
 
   late Database _database;

@@ -2,13 +2,17 @@ import 'package:sqflite/sqflite.dart';
 import 'package:get/get.dart';
 import '../models/output_model.dart';
 import 'database_service.dart';
+import 'product_service.dart';
 
 class OutputService {
-  late final DatabaseService _databaseService;
+  OutputService({
+    DatabaseService? databaseService,
+    ProductService? productService,
+  }) : _databaseService = databaseService ?? Get.find<DatabaseService>(),
+       _productService = productService ?? Get.find<ProductService>();
 
-  OutputService() {
-    _databaseService = Get.find<DatabaseService>();
-  }
+  final DatabaseService _databaseService;
+  final ProductService _productService;
 
   // CRÉER UNE NOUVELLE SORTIE
   Future<bool> createOutput({
@@ -19,20 +23,55 @@ class OutputService {
   }) async {
     try {
       final db = _databaseService.database;
-      await db.insert(
-        'stock_outputs',
-        {
+      await db.insert('stock_outputs', {
+        'id': id,
+        'product_id': productId,
+        'quantity': quantity,
+        'date': DateTime.now().toIso8601String(),
+        'user_id': userId,
+      }, conflictAlgorithm: ConflictAlgorithm.fail);
+      return true;
+    } catch (e) {
+      print('Erreur createOutput: $e');
+      return false;
+    }
+  }
+
+  Future<bool> createOutputWithStockDeduction({
+    required String id,
+    required String productId,
+    required int quantity,
+    required String userId,
+  }) async {
+    if (quantity <= 0) {
+      return false;
+    }
+
+    try {
+      final db = _databaseService.database;
+      return await db.transaction((txn) async {
+        final stockUpdated = await _productService.decrementStock(
+          productId: productId,
+          quantity: quantity,
+          executor: txn,
+        );
+
+        if (!stockUpdated) {
+          return false;
+        }
+
+        await txn.insert('stock_outputs', {
           'id': id,
           'product_id': productId,
           'quantity': quantity,
           'date': DateTime.now().toIso8601String(),
           'user_id': userId,
-        },
-        conflictAlgorithm: ConflictAlgorithm.fail,
-      );
-      return true;
+        }, conflictAlgorithm: ConflictAlgorithm.fail);
+
+        return true;
+      });
     } catch (e) {
-      print('Erreur createOutput: $e');
+      print('Erreur createOutputWithStockDeduction: $e');
       return false;
     }
   }
@@ -121,6 +160,46 @@ class OutputService {
     }
   }
 
+  Future<bool> deleteOutputAndRestoreStock(String outputId) async {
+    try {
+      final db = _databaseService.database;
+      return await db.transaction((txn) async {
+        final maps = await txn.query(
+          'stock_outputs',
+          where: 'id = ?',
+          whereArgs: [outputId],
+          limit: 1,
+        );
+
+        if (maps.isEmpty) {
+          return false;
+        }
+
+        final output = Output.fromMap(maps.first);
+        final rowsDeleted = await txn.delete(
+          'stock_outputs',
+          where: 'id = ?',
+          whereArgs: [outputId],
+        );
+
+        if (rowsDeleted <= 0) {
+          return false;
+        }
+
+        final restored = await _productService.incrementStock(
+          productId: output.productId,
+          quantity: output.quantity,
+          executor: txn,
+        );
+
+        return restored;
+      });
+    } catch (e) {
+      print('Erreur deleteOutputAndRestoreStock: $e');
+      return false;
+    }
+  }
+
   // OBTENIR TOTAL DES SORTIES DU JOUR
   Future<int> getTotalOutputsCountToday() async {
     try {
@@ -152,7 +231,7 @@ class OutputService {
         'SELECT SUM(quantity) as total FROM stock_outputs WHERE date >= ? AND date <= ?',
         [startOfDay.toIso8601String(), endOfDay.toIso8601String()],
       );
-      
+
       if (result.isNotEmpty && result[0]['total'] != null) {
         return (result[0]['total'] as num).toInt();
       }
@@ -165,7 +244,9 @@ class OutputService {
 
   // OBTENIR LES SORTIES D'UN UTILISATEUR POUR UNE DATE SPÉCIFIQUE
   Future<List<Output>> getOutputsByUserIdAndDate(
-      String userId, DateTime date) async {
+    String userId,
+    DateTime date,
+  ) async {
     try {
       final db = _databaseService.database;
       final startOfDay = DateTime(date.year, date.month, date.day);
@@ -174,7 +255,11 @@ class OutputService {
       final List<Map<String, dynamic>> maps = await db.query(
         'stock_outputs',
         where: 'user_id = ? AND date >= ? AND date <= ?',
-        whereArgs: [userId, startOfDay.toIso8601String(), endOfDay.toIso8601String()],
+        whereArgs: [
+          userId,
+          startOfDay.toIso8601String(),
+          endOfDay.toIso8601String(),
+        ],
         orderBy: 'date DESC',
       );
       return List.generate(maps.length, (i) => Output.fromMap(maps[i]));
@@ -200,7 +285,7 @@ class OutputService {
            WHERE so.date >= ? AND so.date <= ?''',
         [startOfDay.toIso8601String(), endOfDay.toIso8601String()],
       );
-      
+
       if (result.isNotEmpty && result[0]['total'] != null) {
         return (result[0]['total'] as num).toDouble();
       }

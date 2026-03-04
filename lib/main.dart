@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:product/bindings/auth_binding.dart';
 import 'package:product/routes/app_pages.dart';
 import 'package:product/routes/app_routes.dart';
 import 'package:product/services/database_service.dart';
-import 'package:product/views/user/login_view.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialiser le service de base de données
   await Get.putAsync<DatabaseService>(
     () => DatabaseService().init(),
     permanent: true,
@@ -20,7 +19,6 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // Background color for entire project
   static const Color backgroundColor = Color(0xFF1E0701);
 
   @override
@@ -49,7 +47,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       themeMode: ThemeMode.dark,
-      home: const LoginView(),
+      initialBinding: AuthBinding(),
       getPages: AppPages.pages,
       initialRoute: AppRoutes.login,
     );

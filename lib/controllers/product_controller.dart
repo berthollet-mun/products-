@@ -5,7 +5,10 @@ import '../models/product.dart';
 import '../services/product_service.dart';
 
 class ProductController extends GetxController {
-  final ProductService _service = ProductService();
+  ProductController({ProductService? productService})
+    : _service = productService ?? Get.find<ProductService>();
+
+  final ProductService _service;
 
   // État réactif
   RxList<Product> products = <Product>[].obs;
@@ -39,6 +42,7 @@ class ProductController extends GetxController {
     required String sku,
     required double price,
     required int quantity,
+    int stockMinimum = 5,
     String? description,
   }) async {
     // Validation
@@ -63,7 +67,9 @@ class ProductController extends GetxController {
       isLoading.value = true;
 
       // Vérifier si SKU est unique
-      final existingProduct = await _service.getProductBySku(sku.trim().toUpperCase());
+      final existingProduct = await _service.getProductBySku(
+        sku.trim().toUpperCase(),
+      );
       if (existingProduct != null) {
         Get.snackbar('Erreur', 'Ce code SKU est déjà utilisé');
         return false;
@@ -75,11 +81,13 @@ class ProductController extends GetxController {
         sku: sku.trim().toUpperCase(),
         price: price,
         quantity: quantity,
+        stockMinimum: stockMinimum,
+        createdAt: DateTime.now().toIso8601String(),
         description: description ?? '',
       );
 
       final success = await _service.saveProduct(newProduct);
-      
+
       if (success) {
         products.add(newProduct);
         Get.snackbar('Succès', 'Produit créé avec succès');
@@ -102,7 +110,7 @@ class ProductController extends GetxController {
       isLoading.value = true;
 
       final success = await _service.updateProduct(updatedProduct);
-      
+
       if (success) {
         final index = products.indexWhere((p) => p.id == updatedProduct.id);
         if (index != -1) {
@@ -128,7 +136,7 @@ class ProductController extends GetxController {
       isLoading.value = true;
 
       final success = await _service.deleteProduct(productId);
-      
+
       if (success) {
         products.removeWhere((p) => p.id == productId);
         Get.snackbar('Succès', 'Produit supprimé avec succès');
@@ -149,7 +157,7 @@ class ProductController extends GetxController {
   Future<bool> updateStock(String productId, int newQuantity) async {
     try {
       final success = await _service.updateStock(productId, newQuantity);
-      
+
       if (success) {
         final index = products.indexWhere((p) => p.id == productId);
         if (index != -1) {
@@ -178,12 +186,12 @@ class ProductController extends GetxController {
   Future<void> searchProducts(String query) async {
     try {
       searchQuery.value = query;
-      
+
       if (query.isEmpty) {
         await loadProducts();
         return;
       }
-      
+
       isLoading.value = true;
       final results = await _service.searchProducts(query);
       products.assignAll(results);

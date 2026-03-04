@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controllers/user_controller.dart';
-import '../../../models/user.dart';
-import '../../../utils/responsive_helper.dart';
+import 'package:product/controllers/user_controller.dart';
+import 'package:product/models/user.dart';
+import 'package:product/views/common/role_guard.dart';
 
 class AdminUserFormView extends StatefulWidget {
   const AdminUserFormView({super.key});
@@ -12,254 +12,148 @@ class AdminUserFormView extends StatefulWidget {
 }
 
 class _AdminUserFormViewState extends State<AdminUserFormView> {
-  late TextEditingController nameController;
-  late TextEditingController emailController;
-  late TextEditingController passwordController;
-  late TextEditingController confirmPasswordController;
-  late String selectedRole;
-  final formKey = GlobalKey<FormState>();
-  bool obscurePassword = true;
-  User? user;
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _passwordController;
+  late final TextEditingController _confirmPasswordController;
+  late final User? _user;
+  String _selectedRole = 'caissier';
+  bool _obscure = true;
 
   @override
   void initState() {
     super.initState();
-    // Get user from arguments if editing
-    user = Get.arguments as User?;
-    nameController = TextEditingController(text: user?.name ?? '');
-    emailController = TextEditingController(text: user?.email ?? '');
-    passwordController = TextEditingController();
-    confirmPasswordController = TextEditingController();
-    selectedRole = user?.role ?? 'caissier';
+    _user = Get.arguments as User?;
+    _nameController = TextEditingController(text: _user?.name ?? '');
+    _emailController = TextEditingController(text: _user?.email ?? '');
+    _passwordController = TextEditingController();
+    _confirmPasswordController = TextEditingController();
+    _selectedRole = _user?.role ?? 'caissier';
   }
 
   @override
   void dispose() {
-    nameController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
-    confirmPasswordController.dispose();
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = ResponsiveHelper.isDesktop(context);
-    final isTablet = ResponsiveHelper.isTablet(context);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          Get.arguments == null
-              ? 'Ajouter un utilisateur'
-              : 'Modifier l\'utilisateur',
+    return RoleGuard(
+      requiredRole: 'admin',
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            _user == null ? 'Ajouter un utilisateur' : 'Modifier utilisateur',
+          ),
         ),
-        backgroundColor: Colors.purple.shade700,
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(isDesktop ? 32 : (isTablet ? 24 : 16)),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: isDesktop ? 800 : (isTablet ? 600 : double.infinity),
-            ),
-            child: Form(
-              key: formKey,
-              child: Column(
-                children: [
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nom',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Nom requis'
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Email requis';
+                    }
+                    if (!value.contains('@')) {
+                      return 'Email invalide';
+                    }
+                    return null;
+                  },
+                ),
+                if (_user == null) ...[
+                  const SizedBox(height: 16),
                   TextFormField(
-                    controller: nameController,
+                    controller: _passwordController,
+                    obscureText: _obscure,
                     decoration: InputDecoration(
-                      labelText: 'Nom complet',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(isDesktop ? 12 : 8),
-                      ),
-                      prefixIcon: const Icon(Icons.person),
-                      contentPadding: EdgeInsets.symmetric(
-                        vertical: isDesktop ? 20 : 16,
+                      labelText: 'Mot de passe',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        onPressed: () => setState(() => _obscure = !_obscure),
+                        icon: Icon(
+                          _obscure ? Icons.visibility_off : Icons.visibility,
+                        ),
                       ),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Le nom est requis';
+                        return 'Mot de passe requis';
+                      }
+                      if (value.length < 6) {
+                        return 'Minimum 6 caracteres';
                       }
                       return null;
                     },
                   ),
-                  SizedBox(height: isDesktop ? 24 : (isTablet ? 20 : 16)),
+                  const SizedBox(height: 16),
                   TextFormField(
-                    controller: emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(isDesktop ? 12 : 8),
-                      ),
-                      prefixIcon: const Icon(Icons.email),
-                      contentPadding: EdgeInsets.symmetric(
-                        vertical: isDesktop ? 20 : 16,
-                      ),
+                    controller: _confirmPasswordController,
+                    obscureText: _obscure,
+                    decoration: const InputDecoration(
+                      labelText: 'Confirmer mot de passe',
+                      border: OutlineInputBorder(),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'L\'email est requis';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Email invalide';
+                      if (value != _passwordController.text) {
+                        return 'Mots de passe differents';
                       }
                       return null;
                     },
-                  ),
-                  SizedBox(height: isDesktop ? 24 : (isTablet ? 20 : 16)),
-                  if (user == null)
-                    Column(
-                      children: [
-                        TextFormField(
-                          controller: passwordController,
-                          obscureText: obscurePassword,
-                          decoration: InputDecoration(
-                            labelText: 'Mot de passe',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                isDesktop ? 12 : 8,
-                              ),
-                            ),
-                            prefixIcon: const Icon(Icons.lock),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                              ),
-                              onPressed: () {
-                                setState(
-                                  () => obscurePassword = !obscurePassword,
-                                );
-                              },
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                              vertical: isDesktop ? 20 : 16,
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Le mot de passe est requis';
-                            }
-                            if (value.length < 6) {
-                              return 'Au moins 6 caractères';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: isDesktop ? 24 : (isTablet ? 20 : 16)),
-                        TextFormField(
-                          controller: confirmPasswordController,
-                          obscureText: obscurePassword,
-                          decoration: InputDecoration(
-                            labelText: 'Confirmer le mot de passe',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                isDesktop ? 12 : 8,
-                              ),
-                            ),
-                            prefixIcon: const Icon(Icons.lock),
-                            contentPadding: EdgeInsets.symmetric(
-                              vertical: isDesktop ? 20 : 16,
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value != passwordController.text) {
-                              return 'Les mots de passe ne correspondent pas';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: isDesktop ? 24 : (isTablet ? 20 : 16)),
-                      ],
-                    ),
-                  Container(
-                    padding: EdgeInsets.all(isDesktop ? 16 : 12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(isDesktop ? 12 : 8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Rôle',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: isDesktop ? 18 : 16,
-                          ),
-                        ),
-                        SizedBox(height: isDesktop ? 12 : 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ListTile(
-                                title: Text(
-                                  'Admin',
-                                  style: TextStyle(
-                                    fontSize: isDesktop ? 16 : 14,
-                                  ),
-                                ),
-                                leading: Radio<String>(
-                                  value: 'admin',
-                                  groupValue: selectedRole,
-                                  onChanged: (value) {
-                                    setState(() => selectedRole = value!);
-                                  },
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: ListTile(
-                                title: Text(
-                                  'Caissier',
-                                  style: TextStyle(
-                                    fontSize: isDesktop ? 16 : 14,
-                                  ),
-                                ),
-                                leading: Radio<String>(
-                                  value: 'caissier',
-                                  groupValue: selectedRole,
-                                  onChanged: (value) {
-                                    setState(() => selectedRole = value!);
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: isDesktop ? 32 : (isTablet ? 28 : 24)),
-                  SizedBox(
-                    width: double.infinity,
-                    height: isDesktop ? 56 : (isTablet ? 52 : 48),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple.shade700,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            isDesktop ? 12 : 8,
-                          ),
-                        ),
-                      ),
-                      onPressed: _handleSubmit,
-                      child: Text(
-                        user == null ? 'Créer l\'utilisateur' : 'Mettre à jour',
-                        style: TextStyle(
-                          fontSize: isDesktop ? 18 : 16,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
                   ),
                 ],
-              ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedRole,
+                  decoration: const InputDecoration(
+                    labelText: 'Role',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                    DropdownMenuItem(
+                      value: 'caissier',
+                      child: Text('Caissier'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _selectedRole = value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _submit,
+                    child: Text(_user == null ? 'Creer' : 'Mettre a jour'),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -267,39 +161,36 @@ class _AdminUserFormViewState extends State<AdminUserFormView> {
     );
   }
 
-  Future<void> _handleSubmit() async {
-    if (!formKey.currentState!.validate()) return;
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     final controller = Get.find<UserController>();
-
-    if (user == null) {
-      // Create new user
+    if (_user == null) {
       final success = await controller.addUser(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        email: emailController.text.trim().toLowerCase(),
-        password: passwordController.text,
-        role: selectedRole,
-        name: nameController.text.trim(),
+        email: _emailController.text.trim().toLowerCase(),
+        password: _passwordController.text,
+        role: _selectedRole,
+        name: _nameController.text.trim(),
       );
-
       if (success) {
         Get.back();
-        Get.snackbar('Succès', 'Utilisateur créé');
-      } else {
-        Get.snackbar('Erreur', 'Impossible de créer l\'utilisateur');
       }
-    } else {
-      // Update existing user (only name and role)
-      await controller.updateUser(
-        id: user!.id,
-        updateData: {
-          'email': emailController.text.trim().toLowerCase(),
-          'name': nameController.text.trim(),
-          'role': selectedRole,
-        },
-      );
+      return;
+    }
+
+    final success = await controller.updateUser(
+      id: _user.id,
+      updateData: {
+        'email': _emailController.text.trim().toLowerCase(),
+        'name': _nameController.text.trim(),
+        'role': _selectedRole,
+      },
+    );
+    if (success) {
       Get.back();
-      Get.snackbar('Succès', 'Utilisateur mis à jour');
     }
   }
 }

@@ -2,14 +2,20 @@ import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/output_model.dart';
+import 'product_controller.dart';
 import '../services/output_service.dart';
 import '../services/product_service.dart';
 
 class OutputController extends GetxController {
-  final OutputService _outputService = OutputService();
-  final ProductService _productService = ProductService();
+  OutputController({
+    OutputService? outputService,
+    ProductService? productService,
+  }) : _outputService = outputService ?? Get.find<OutputService>(),
+       _productService = productService ?? Get.find<ProductService>();
 
-  // État réactif
+  final OutputService _outputService;
+  final ProductService _productService;
+
   RxList<Output> outputs = <Output>[].obs;
   RxBool isLoading = false.obs;
   RxInt totalOutputsCount = 0.obs;
@@ -23,7 +29,6 @@ class OutputController extends GetxController {
     loadDailyStats();
   }
 
-  // CHARGER TOUTES LES SORTIES
   Future<void> loadAllOutputs() async {
     try {
       isLoading.value = true;
@@ -37,64 +42,45 @@ class OutputController extends GetxController {
     }
   }
 
-  // CRÉER UNE NOUVELLE SORTIE (VENTE)
   Future<bool> createOutput({
     required String productId,
     required int quantity,
     required String userId,
   }) async {
-    // Validation
     if (productId.isEmpty) {
       Get.snackbar('Erreur', 'Le produit est requis');
       return false;
     }
     if (quantity <= 0) {
-      Get.snackbar('Erreur', 'La quantité doit être supérieure à 0');
+      Get.snackbar('Erreur', 'La quantite doit etre superieure a 0');
       return false;
     }
     if (userId.isEmpty) {
-      Get.snackbar('Erreur', 'L\'utilisateur est requis');
+      Get.snackbar('Erreur', 'L utilisateur est requis');
       return false;
     }
 
     try {
       isLoading.value = true;
-
-      // Vérifier que le stock est suffisant
-      final isAvailable = await _productService.isStockAvailable(productId, quantity);
-      if (!isAvailable) {
-        Get.snackbar('Erreur', 'Stock insuffisant pour ce produit');
-        return false;
-      }
-
       final outputId = const Uuid().v4();
 
-      // Créer la sortie
-      final success = await _outputService.createOutput(
+      final success = await _outputService.createOutputWithStockDeduction(
         id: outputId,
         productId: productId,
         quantity: quantity,
         userId: userId,
       );
 
-      if (success) {
-        // Mettre à jour le stock du produit
-        final currentProduct = await _productService.getProductById(productId);
-        if (currentProduct != null) {
-          final newQuantity = currentProduct.quantity - quantity;
-          await _productService.updateStock(productId, newQuantity);
-        }
-
-        // Recharger les données
-        await loadAllOutputs();
-        await loadDailyStats();
-        
-        Get.snackbar('Succès', 'Vente enregistrée et stock mis à jour');
-        return true;
+      if (!success) {
+        Get.snackbar('Erreur', 'Stock insuffisant ou erreur de creation');
+        return false;
       }
 
-      Get.snackbar('Erreur', 'Erreur lors de la création de la vente');
-      return false;
+      await loadAllOutputs();
+      await loadDailyStats();
+      await _refreshProducts();
+      Get.snackbar('Succes', 'Vente enregistree et stock mis a jour');
+      return true;
     } catch (e) {
       Get.snackbar('Erreur', 'Erreur: $e');
       return false;
@@ -103,33 +89,21 @@ class OutputController extends GetxController {
     }
   }
 
-  // SUPPRIMER UNE SORTIE
   Future<bool> deleteOutput(String outputId) async {
     try {
       isLoading.value = true;
+      final success = await _outputService.deleteOutputAndRestoreStock(outputId);
 
-      // Récupérer les détails de la sortie avant suppression
-      final output = await _outputService.getOutputById(outputId);
-      
-      final success = await _outputService.deleteOutput(outputId);
-
-      if (success && output != null) {
-        // Restaurer le stock du produit
-        final currentProduct = await _productService.getProductById(output.productId);
-        if (currentProduct != null) {
-          final newQuantity = currentProduct.quantity + output.quantity;
-          await _productService.updateStock(output.productId, newQuantity);
-        }
-
-        await loadAllOutputs();
-        await loadDailyStats();
-        
-        Get.snackbar('Succès', 'Vente annulée et stock restauré');
-        return true;
+      if (!success) {
+        Get.snackbar('Erreur', 'Erreur lors de la suppression');
+        return false;
       }
 
-      Get.snackbar('Erreur', 'Erreur lors de la suppression');
-      return false;
+      await loadAllOutputs();
+      await loadDailyStats();
+      await _refreshProducts();
+      Get.snackbar('Succes', 'Vente annulee et stock restaure');
+      return true;
     } catch (e) {
       Get.snackbar('Erreur', 'Erreur: $e');
       return false;
@@ -138,13 +112,11 @@ class OutputController extends GetxController {
     }
   }
 
-  // CHARGER LES STATISTIQUES DU JOUR
   Future<void> loadDailyStats() async {
     try {
       final count = await _outputService.getTotalOutputsCountToday();
       final quantity = await _outputService.getTotalQuantitySoldToday();
       final amount = await _outputService.getTotalSalesAmountToday();
-      
       totalOutputsCount.value = count;
       totalQuantitySold.value = quantity;
       totalSalesAmount.value = amount;
@@ -153,7 +125,6 @@ class OutputController extends GetxController {
     }
   }
 
-  // RÉCUPÉRER LES SORTIES D'UN PRODUIT
   Future<List<Output>> getOutputsByProductId(String productId) async {
     try {
       return await _outputService.getOutputsByProductId(productId);
@@ -163,7 +134,6 @@ class OutputController extends GetxController {
     }
   }
 
-  // RÉCUPÉRER LES SORTIES D'UN UTILISATEUR (CAISSIER)
   Future<List<Output>> getOutputsByUserId(String userId) async {
     try {
       return await _outputService.getOutputsByUserId(userId);
@@ -173,9 +143,10 @@ class OutputController extends GetxController {
     }
   }
 
-  // RÉCUPÉRER LES SORTIES D'UN UTILISATEUR POUR UNE DATE SPÉCIFIQUE
   Future<List<Output>> getOutputsByUserIdAndDate(
-      String userId, DateTime date) async {
+    String userId,
+    DateTime date,
+  ) async {
     try {
       return await _outputService.getOutputsByUserIdAndDate(userId, date);
     } catch (e) {
@@ -184,7 +155,6 @@ class OutputController extends GetxController {
     }
   }
 
-  // VÉRIFIER LA DISPONIBILITÉ DU STOCK
   Future<bool> isStockAvailable(String productId, int requiredQuantity) async {
     try {
       return await _productService.isStockAvailable(productId, requiredQuantity);
@@ -194,13 +164,18 @@ class OutputController extends GetxController {
     }
   }
 
-  // OBTENIR LE STOCK D'UN PRODUIT
   Future<int?> getProductStock(String productId) async {
     try {
       return await _productService.getProductStock(productId);
     } catch (e) {
       print('Erreur getProductStock: $e');
       return null;
+    }
+  }
+
+  Future<void> _refreshProducts() async {
+    if (Get.isRegistered<ProductController>()) {
+      await Get.find<ProductController>().loadProducts();
     }
   }
 }

@@ -6,8 +6,20 @@ import '../services/product_service.dart';
 class EntryBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<EntryService>(() => EntryService());
-    Get.lazyPut<ProductService>(() => ProductService());
-    Get.lazyPut<EntryController>(() => EntryController());
+    if (!Get.isRegistered<ProductService>()) {
+      Get.lazyPut<ProductService>(() => ProductService(), fenix: true);
+    }
+    if (!Get.isRegistered<EntryService>()) {
+      Get.lazyPut<EntryService>(
+        () => EntryService(productService: Get.find<ProductService>()),
+        fenix: true,
+      );
+    }
+    if (!Get.isRegistered<EntryController>()) {
+      Get.lazyPut<EntryController>(
+        () => EntryController(entryService: Get.find<EntryService>()),
+        fenix: true,
+      );
+    }
   }
 }

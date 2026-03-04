@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:product/utils/responsive_helper.dart';
 
-import '../../../controllers/product_controller.dart';
-import '../../../models/product.dart';
+import '../../controllers/product_controller.dart';
+import '../../models/product.dart';
 
 class EditProductForm extends StatefulWidget {
   // On ne demande que la Map, exactement comme pour EditUserForm
@@ -266,6 +266,10 @@ class _EditProductFormState extends State<EditProductForm> {
         sku: _skuController.text.trim().toUpperCase(),
         price: double.parse(_priceController.text),
         quantity: int.parse(_qtyController.text),
+        stockMinimum: (widget.productData['stock_minimum'] ?? 5) as int,
+        createdAt:
+            (widget.productData['created_at'] as String?) ??
+            DateTime.now().toIso8601String(),
         description: _descController.text.trim(),
       );
 

@@ -3,7 +3,10 @@ import 'package:product/models/user.dart';
 import 'package:product/services/user_service.dart';
 
 class UserController extends GetxController {
-  final UserService _userService = UserService();
+  UserController({UserService? userService})
+    : _userService = userService ?? Get.find<UserService>();
+
+  final UserService _userService;
 
   // État réactif
   RxList<User> users = <User>[].obs;
@@ -80,7 +83,7 @@ class UserController extends GetxController {
       );
 
       final success = await _userService.addUser(user);
-      
+
       if (success) {
         users.add(user);
         filteredUsers.add(user);
@@ -143,12 +146,13 @@ class UserController extends GetxController {
       );
 
       final success = await _userService.updateUser(updatedUser);
-      
+
       if (success) {
         final index = users.indexWhere((u) => u.id == id);
         if (index != -1) {
           users[index] = updatedUser;
-          filteredUsers[filteredUsers.indexWhere((u) => u.id == id)] = updatedUser;
+          filteredUsers[filteredUsers.indexWhere((u) => u.id == id)] =
+              updatedUser;
         }
         Get.snackbar('Succès', 'Utilisateur mis à jour avec succès');
         return true;
@@ -170,7 +174,7 @@ class UserController extends GetxController {
       isLoading.value = true;
 
       final success = await _userService.deleteUser(userId);
-      
+
       if (success) {
         users.removeWhere((u) => u.id == userId);
         filteredUsers.removeWhere((u) => u.id == userId);
@@ -192,7 +196,7 @@ class UserController extends GetxController {
   Future<void> searchUsers(String query) async {
     try {
       searchQuery.value = query;
-      
+
       if (query.isEmpty) {
         filteredUsers.assignAll(users);
         return;
@@ -220,13 +224,11 @@ class UserController extends GetxController {
   // FILTRER PAR RÔLE
   void filterByRole(String role) {
     selectedRole.value = role;
-    
+
     if (role.isEmpty) {
       filteredUsers.assignAll(users);
     } else {
-      filteredUsers.assignAll(
-        users.where((u) => u.role == role).toList(),
-      );
+      filteredUsers.assignAll(users.where((u) => u.role == role).toList());
     }
   }
 
