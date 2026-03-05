@@ -268,9 +268,6 @@ class _CashierOutputFormViewState extends State<CashierOutputFormView> {
       userId: userId,
     );
 
-    if (success) {
-      Get.back();
-      Get.snackbar('Succes', 'Vente enregistree');
-    }
+    if (!success) return;
   }
 }

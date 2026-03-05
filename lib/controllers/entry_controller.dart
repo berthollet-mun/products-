@@ -1,9 +1,10 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/entry_model.dart';
-import 'product_controller.dart';
+import '../routes/app_routes.dart';
 import '../services/entry_service.dart';
+import 'product_controller.dart';
 
 class EntryController extends GetxController {
   EntryController({EntryService? entryService})
@@ -28,8 +29,7 @@ class EntryController extends GetxController {
       isLoading.value = true;
       final loadedEntries = await _entryService.getAllEntries();
       entries.assignAll(loadedEntries);
-    } catch (e) {
-      print('Erreur loadAllEntries: $e');
+    } catch (_) {
       Get.snackbar('Erreur', 'Erreur lors du chargement des entrees');
     } finally {
       isLoading.value = false;
@@ -74,6 +74,10 @@ class EntryController extends GetxController {
       await loadDailyStats();
       await _refreshProducts();
       Get.snackbar('Succes', 'Entree creee et stock mis a jour');
+      if (Get.currentRoute == AppRoutes.adminEntryForm &&
+          (Get.key.currentState?.canPop() ?? false)) {
+        Get.back(result: true);
+      }
       return true;
     } catch (e) {
       Get.snackbar('Erreur', 'Erreur: $e');
@@ -86,7 +90,6 @@ class EntryController extends GetxController {
   Future<bool> deleteEntry(String entryId) async {
     try {
       isLoading.value = true;
-
       final success = await _entryService.deleteEntryAndRestoreStock(entryId);
       if (!success) {
         Get.snackbar(
@@ -115,16 +118,13 @@ class EntryController extends GetxController {
       final quantity = await _entryService.getTotalQuantityEnteredToday();
       totalEntriesCount.value = count;
       totalQuantityEntered.value = quantity;
-    } catch (e) {
-      print('Erreur loadDailyStats: $e');
-    }
+    } catch (_) {}
   }
 
   Future<List<Entry>> getEntriesByProductId(String productId) async {
     try {
       return await _entryService.getEntriesByProductId(productId);
-    } catch (e) {
-      print('Erreur getEntriesByProductId: $e');
+    } catch (_) {
       return [];
     }
   }
@@ -132,8 +132,7 @@ class EntryController extends GetxController {
   Future<List<Entry>> getEntriesByUserId(String userId) async {
     try {
       return await _entryService.getEntriesByUserId(userId);
-    } catch (e) {
-      print('Erreur getEntriesByUserId: $e');
+    } catch (_) {
       return [];
     }
   }

@@ -87,7 +87,7 @@ class AdminBottomNavigation extends StatelessWidget {
                       child: const Icon(
                         Icons.add,
                         color: Colors.white,
-                        size: 34,
+                        size: 28,
                       ),
                     ),
                   ),
@@ -106,14 +106,14 @@ class AdminBottomNavigation extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return SizedBox(
-      width: 54,
-      height: 54,
+      width: 44,
+      height: 44,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
           onTap: onTap,
-          child: Icon(icon, color: color, size: 30),
+          child: Icon(icon, color: color, size: 24),
         ),
       ),
     );

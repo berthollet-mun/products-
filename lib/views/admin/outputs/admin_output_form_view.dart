@@ -174,8 +174,6 @@ class _AdminOutputFormViewState extends State<AdminOutputFormView> {
       quantity: int.parse(_quantityController.text),
       userId: userId,
     );
-    if (success) {
-      Get.back();
-    }
+    if (!success) return;
   }
 }

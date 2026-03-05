@@ -61,18 +61,18 @@ class _AdminOutputListViewState extends State<AdminOutputListView> {
                       constraints: BoxConstraints(maxWidth: maxWidth),
                       child: Column(
                         children: [
-                          PageActionHeader(
-                            title: 'Sorties de Stock',
-                            buttonLabel: 'Ajouter',
-                            onPressed: () => Get.toNamed(AppRoutes.adminOutputForm),
-                          ),
-                          SizedBox(height: gap),
                           SearchCardField(
                             controller: _searchController,
                             onChanged: (value) => setState(
                               () => _query = value.trim().toLowerCase(),
                             ),
                             hintText: 'Rechercher une sortie',
+                          ),
+                          SizedBox(height: gap),
+                             PageActionHeader(
+                            title: 'Sorties de Stock',
+                            buttonLabel: 'Ajouter',
+                            onPressed: () => Get.toNamed(AppRoutes.adminOutputForm),
                           ),
                           SizedBox(height: gap),
                           if (outputController.isLoading.value)

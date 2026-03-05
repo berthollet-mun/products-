@@ -1,10 +1,11 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/output_model.dart';
-import 'product_controller.dart';
+import '../routes/app_routes.dart';
 import '../services/output_service.dart';
 import '../services/product_service.dart';
+import 'product_controller.dart';
 
 class OutputController extends GetxController {
   OutputController({
@@ -34,8 +35,7 @@ class OutputController extends GetxController {
       isLoading.value = true;
       final loadedOutputs = await _outputService.getAllOutputs();
       outputs.assignAll(loadedOutputs);
-    } catch (e) {
-      print('Erreur loadAllOutputs: $e');
+    } catch (_) {
       Get.snackbar('Erreur', 'Erreur lors du chargement des sorties');
     } finally {
       isLoading.value = false;
@@ -80,6 +80,11 @@ class OutputController extends GetxController {
       await loadDailyStats();
       await _refreshProducts();
       Get.snackbar('Succes', 'Vente enregistree et stock mis a jour');
+      if ((Get.currentRoute == AppRoutes.adminOutputForm ||
+              Get.currentRoute == AppRoutes.cashierOutputForm) &&
+          (Get.key.currentState?.canPop() ?? false)) {
+        Get.back(result: true);
+      }
       return true;
     } catch (e) {
       Get.snackbar('Erreur', 'Erreur: $e');
@@ -120,16 +125,13 @@ class OutputController extends GetxController {
       totalOutputsCount.value = count;
       totalQuantitySold.value = quantity;
       totalSalesAmount.value = amount;
-    } catch (e) {
-      print('Erreur loadDailyStats: $e');
-    }
+    } catch (_) {}
   }
 
   Future<List<Output>> getOutputsByProductId(String productId) async {
     try {
       return await _outputService.getOutputsByProductId(productId);
-    } catch (e) {
-      print('Erreur getOutputsByProductId: $e');
+    } catch (_) {
       return [];
     }
   }
@@ -137,8 +139,7 @@ class OutputController extends GetxController {
   Future<List<Output>> getOutputsByUserId(String userId) async {
     try {
       return await _outputService.getOutputsByUserId(userId);
-    } catch (e) {
-      print('Erreur getOutputsByUserId: $e');
+    } catch (_) {
       return [];
     }
   }
@@ -149,8 +150,7 @@ class OutputController extends GetxController {
   ) async {
     try {
       return await _outputService.getOutputsByUserIdAndDate(userId, date);
-    } catch (e) {
-      print('Erreur getOutputsByUserIdAndDate: $e');
+    } catch (_) {
       return [];
     }
   }
@@ -158,8 +158,7 @@ class OutputController extends GetxController {
   Future<bool> isStockAvailable(String productId, int requiredQuantity) async {
     try {
       return await _productService.isStockAvailable(productId, requiredQuantity);
-    } catch (e) {
-      print('Erreur isStockAvailable: $e');
+    } catch (_) {
       return false;
     }
   }
@@ -167,8 +166,7 @@ class OutputController extends GetxController {
   Future<int?> getProductStock(String productId) async {
     try {
       return await _productService.getProductStock(productId);
-    } catch (e) {
-      print('Erreur getProductStock: $e');
+    } catch (_) {
       return null;
     }
   }

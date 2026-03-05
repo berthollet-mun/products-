@@ -228,7 +228,7 @@ class _AdminProductFormViewState extends State<AdminProductFormView> {
     final stockMinimum = int.parse(_stockMinimumController.text);
 
     if (_currentProduct == null) {
-      final success = await controller.createNewProduct(
+      await controller.createNewProduct(
         name: _nameController.text.trim(),
         sku: _skuController.text.trim().toUpperCase(),
         price: double.parse(_priceController.text),
@@ -236,9 +236,6 @@ class _AdminProductFormViewState extends State<AdminProductFormView> {
         stockMinimum: stockMinimum,
         description: _descriptionController.text.trim(),
       );
-      if (success) {
-        Get.back(result: true);
-      }
       return;
     }
 
@@ -254,9 +251,6 @@ class _AdminProductFormViewState extends State<AdminProductFormView> {
       description: _descriptionController.text.trim(),
     );
 
-    final success = await controller.updateProduct(updatedProduct);
-    if (success) {
-      Get.back(result: true);
-    }
+    await controller.updateProduct(updatedProduct);
   }
 }

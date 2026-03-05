@@ -58,15 +58,6 @@ class _AdminUserListViewState extends State<AdminUserListView> {
                       constraints: BoxConstraints(maxWidth: maxWidth),
                       child: Column(
                         children: [
-                          PageActionHeader(
-                            title: 'Utilisateurs',
-                            buttonLabel: 'Ajouter',
-                            onPressed: () async {
-                              await Get.toNamed(AppRoutes.adminUserForm);
-                              controller.loadAllUsers();
-                            },
-                          ),
-                          SizedBox(height: gap),
                           SearchCardField(
                             controller: _searchController,
                             onChanged: (value) {
@@ -75,6 +66,17 @@ class _AdminUserListViewState extends State<AdminUserListView> {
                             hintText: 'Rechercher un utilisateur',
                           ),
                           SizedBox(height: gap),
+
+                             PageActionHeader(
+                            title: 'Utilisateurs',
+                            buttonLabel: 'Ajouter',
+                            onPressed: () async {
+                              await Get.toNamed(AppRoutes.adminUserForm);
+                              controller.loadAllUsers();
+                            },
+                          ),
+                          SizedBox(height: gap),
+                          
                           if (controller.isLoading.value)
                             const Padding(
                               padding: EdgeInsets.all(24),

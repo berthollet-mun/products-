@@ -1,7 +1,8 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/product.dart';
+import '../routes/app_routes.dart';
 import '../services/product_service.dart';
 
 class ProductController extends GetxController {
@@ -10,7 +11,6 @@ class ProductController extends GetxController {
 
   final ProductService _service;
 
-  // État réactif
   RxList<Product> products = <Product>[].obs;
   RxBool isLoading = false.obs;
   RxString selectedProductId = ''.obs;
@@ -22,21 +22,18 @@ class ProductController extends GetxController {
     loadProducts();
   }
 
-  // CHARGER TOUS LES PRODUITS
   Future<void> loadProducts() async {
     try {
       isLoading.value = true;
       final loadedProducts = await _service.getAllProducts();
       products.assignAll(loadedProducts);
     } catch (e) {
-      print("Erreur chargement: $e");
       Get.snackbar('Erreur', 'Erreur lors du chargement des produits');
     } finally {
       isLoading.value = false;
     }
   }
 
-  // CRÉER UN NOUVEAU PRODUIT
   Future<bool> createNewProduct({
     required String name,
     required String sku,
@@ -45,7 +42,6 @@ class ProductController extends GetxController {
     int stockMinimum = 5,
     String? description,
   }) async {
-    // Validation
     if (name.trim().isEmpty) {
       Get.snackbar('Erreur', 'Le nom est requis');
       return false;
@@ -55,23 +51,21 @@ class ProductController extends GetxController {
       return false;
     }
     if (price <= 0) {
-      Get.snackbar('Erreur', 'Le prix doit être supérieur à zéro');
+      Get.snackbar('Erreur', 'Le prix doit etre superieur a zero');
       return false;
     }
     if (quantity < 0) {
-      Get.snackbar('Erreur', 'Le stock ne peut pas être négatif');
+      Get.snackbar('Erreur', 'Le stock ne peut pas etre negatif');
       return false;
     }
 
     try {
       isLoading.value = true;
-
-      // Vérifier si SKU est unique
       final existingProduct = await _service.getProductBySku(
         sku.trim().toUpperCase(),
       );
       if (existingProduct != null) {
-        Get.snackbar('Erreur', 'Ce code SKU est déjà utilisé');
+        Get.snackbar('Erreur', 'Ce code SKU est deja utilise');
         return false;
       }
 
@@ -87,28 +81,29 @@ class ProductController extends GetxController {
       );
 
       final success = await _service.saveProduct(newProduct);
-
       if (success) {
         products.add(newProduct);
-        Get.snackbar('Succès', 'Produit créé avec succès');
+        Get.snackbar('Succes', 'Produit cree avec succes');
+        if (Get.currentRoute == AppRoutes.adminProductForm &&
+            (Get.key.currentState?.canPop() ?? false)) {
+          Get.back(result: true);
+        }
         return true;
-      } else {
-        Get.snackbar('Erreur', 'Erreur lors de la création du produit');
-        return false;
       }
+
+      Get.snackbar('Erreur', 'Erreur lors de la creation du produit');
+      return false;
     } catch (e) {
-      Get.snackbar('Erreur', 'Erreur système : $e');
+      Get.snackbar('Erreur', 'Erreur systeme: $e');
       return false;
     } finally {
       isLoading.value = false;
     }
   }
 
-  // METTRE À JOUR UN PRODUIT
   Future<bool> updateProduct(Product updatedProduct) async {
     try {
       isLoading.value = true;
-
       final success = await _service.updateProduct(updatedProduct);
 
       if (success) {
@@ -116,35 +111,37 @@ class ProductController extends GetxController {
         if (index != -1) {
           products[index] = updatedProduct;
         }
-        Get.snackbar('Succès', 'Produit mis à jour avec succès');
+        Get.snackbar('Succes', 'Produit mis a jour avec succes');
+        if (Get.currentRoute == AppRoutes.adminProductForm &&
+            (Get.key.currentState?.canPop() ?? false)) {
+          Get.back(result: true);
+        }
         return true;
-      } else {
-        Get.snackbar('Erreur', 'Erreur lors de la mise à jour');
-        return false;
       }
+
+      Get.snackbar('Erreur', 'Erreur lors de la mise a jour');
+      return false;
     } catch (e) {
-      Get.snackbar('Erreur', 'Erreur lors de la mise à jour: $e');
+      Get.snackbar('Erreur', 'Erreur lors de la mise a jour: $e');
       return false;
     } finally {
       isLoading.value = false;
     }
   }
 
-  // SUPPRIMER UN PRODUIT
   Future<bool> deleteProduct(String productId) async {
     try {
       isLoading.value = true;
-
       final success = await _service.deleteProduct(productId);
 
       if (success) {
         products.removeWhere((p) => p.id == productId);
-        Get.snackbar('Succès', 'Produit supprimé avec succès');
+        Get.snackbar('Succes', 'Produit supprime avec succes');
         return true;
-      } else {
-        Get.snackbar('Erreur', 'Erreur lors de la suppression');
-        return false;
       }
+
+      Get.snackbar('Erreur', 'Erreur lors de la suppression');
+      return false;
     } catch (e) {
       Get.snackbar('Erreur', 'Erreur lors de la suppression: $e');
       return false;
@@ -153,11 +150,9 @@ class ProductController extends GetxController {
     }
   }
 
-  // METTRE À JOUR LE STOCK
   Future<bool> updateStock(String productId, int newQuantity) async {
     try {
       final success = await _service.updateStock(productId, newQuantity);
-
       if (success) {
         final index = products.indexWhere((p) => p.id == productId);
         if (index != -1) {
@@ -168,25 +163,21 @@ class ProductController extends GetxController {
       }
       return false;
     } catch (e) {
-      print('Erreur updateStock: $e');
       return false;
     }
   }
 
-  // OBTENIR UN PRODUIT PAR ID
   Product? getProductById(String productId) {
     try {
       return products.firstWhere((p) => p.id == productId);
-    } catch (e) {
+    } catch (_) {
       return null;
     }
   }
 
-  // RECHERCHER DES PRODUITS
   Future<void> searchProducts(String query) async {
     try {
       searchQuery.value = query;
-
       if (query.isEmpty) {
         await loadProducts();
         return;
@@ -195,54 +186,45 @@ class ProductController extends GetxController {
       isLoading.value = true;
       final results = await _service.searchProducts(query);
       products.assignAll(results);
-    } catch (e) {
+    } catch (_) {
       Get.snackbar('Erreur', 'Erreur lors de la recherche');
     } finally {
       isLoading.value = false;
     }
   }
 
-  // OBTENIR LES PRODUITS EN RUPTURE DE STOCK
   Future<List<Product>> getLowStockProducts() async {
     try {
       return await _service.getLowStockProducts();
-    } catch (e) {
-      print('Erreur getLowStockProducts: $e');
+    } catch (_) {
       return [];
     }
   }
 
-  // VÉRIFIER LA DISPONIBILITÉ DU STOCK
   Future<bool> isStockAvailable(String productId, int requiredQuantity) async {
     try {
       return await _service.isStockAvailable(productId, requiredQuantity);
-    } catch (e) {
-      print('Erreur isStockAvailable: $e');
+    } catch (_) {
       return false;
     }
   }
 
-  // OBTENIR LE STOCK D'UN PRODUIT
   Future<int?> getProductStock(String productId) async {
     try {
       return await _service.getProductStock(productId);
-    } catch (e) {
-      print('Erreur getProductStock: $e');
+    } catch (_) {
       return null;
     }
   }
 
-  // SÉLECTIONNER UN PRODUIT
   void selectProduct(String productId) {
     selectedProductId.value = productId;
   }
 
-  // OBTENIR LE NOMBRE TOTAL DE PRODUITS
   Future<int> getProductCount() async {
     try {
       return await _service.getProductCount();
-    } catch (e) {
-      print('Erreur getProductCount: $e');
+    } catch (_) {
       return 0;
     }
   }

@@ -19,9 +19,9 @@ class PageActionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    final titleSize = (width * 0.07).clamp(24.0, 32.0);
+    final titleSize = (width * 0.05).clamp(18.0, 22.0);
     return Container(
-      padding: EdgeInsets.all((width * 0.04).clamp(12.0, 18.0)),
+      padding: EdgeInsets.all((width * 0.035).clamp(10.0, 12.0)),
       decoration: AppTheme.glassCard(),
       child: Row(
         children: [
@@ -127,8 +127,8 @@ class GradientSubmitButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final buttonHeight = (MediaQuery.of(context).size.height * 0.07).clamp(
-      48.0,
-      56.0,
+      44.0,
+      50.0,
     );
     return SizedBox(
       width: double.infinity,
@@ -136,7 +136,7 @@ class GradientSubmitButton extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: isCashier ? AppTheme.cashierGradient : AppTheme.adminGradient,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: AppTheme.glassShadow,
         ),
         child: ElevatedButton.icon(
@@ -147,14 +147,14 @@ class GradientSubmitButton extends StatelessWidget {
             style: GoogleFonts.poppins(
               color: Colors.white,
               fontWeight: FontWeight.w700,
-              fontSize: 17,
+              fontSize: 14,
             ),
           ),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
         ),

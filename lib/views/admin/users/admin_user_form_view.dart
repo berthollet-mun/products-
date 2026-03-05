@@ -239,9 +239,7 @@ class _AdminUserFormViewState extends State<AdminUserFormView> {
         role: _selectedRole,
         name: _nameController.text.trim(),
       );
-      if (success) {
-        Get.back();
-      }
+      if (!success) return;
       return;
     }
 
@@ -254,8 +252,6 @@ class _AdminUserFormViewState extends State<AdminUserFormView> {
         'role': _selectedRole,
       },
     );
-    if (success) {
-      Get.back();
-    }
+    if (!success) return;
   }
 }

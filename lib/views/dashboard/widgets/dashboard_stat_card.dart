@@ -23,12 +23,12 @@ class DashboardStatCard extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 160;
-        final iconBox = compact ? 30.0 : 34.0;
-        final valueSize = compact ? 22.0 : 30.0;
-        final titleSize = compact ? 13.0 : 16.0;
+        final iconBox = compact ? 26.0 : 30.0;
+        final valueSize = compact ? 18.0 : 20.0;
+        final titleSize = compact ? 12.0 : 13.0;
 
         return Container(
-          padding: EdgeInsets.all(compact ? 20 : 26),
+          padding: EdgeInsets.all(compact ? 10 : 12),
           decoration: AppTheme.glassCard(),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -41,9 +41,9 @@ class DashboardStatCard extends StatelessWidget {
                   color: iconColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: iconColor, size: compact ? 17 : 20),
+                child: Icon(icon, color: iconColor, size: compact ? 14 : 18),
               ),
-              SizedBox(height: compact ? 8 : 12),
+              SizedBox(height: compact ? 6 : 8),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,

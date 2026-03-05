@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   static const Color pageBackground = Color(0xFFEDEAF6);
   static const Color surface = Color(0xFFFFFFFF);
-  static const double cardRadius = 28;
+  static const double cardRadius = 18;
   static const double inputRadius = 15;
   static const Color adminPrimary = Color(0xFF2D79E6);
   static const Color adminDark = Color(0xFF0B47A1);
@@ -52,6 +52,8 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       scaffoldBackgroundColor: pageBackground,
       textTheme: textTheme,
       appBarTheme: const AppBarTheme(

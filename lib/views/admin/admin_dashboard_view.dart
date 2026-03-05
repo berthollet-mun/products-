@@ -101,8 +101,8 @@ class AdminDashboardView extends GetView<DashboardController> {
 
   Widget _adminMainCard() {
     final compact = Get.width < 360;
-    final titleSize = compact ? 20.0 : 24.0;
-    final amountSize = compact ? 34.0 : 42.0;
+    final titleSize = compact ? 16.0 : 18.0;
+    final amountSize = compact ? 26.0 : 32.0;
 
     return AspectRatio(
       aspectRatio: compact ? 1.45 : 1.72,
@@ -216,7 +216,7 @@ class AdminDashboardView extends GetView<DashboardController> {
 
   Widget _statsGrid() {
     final width = Get.width;
-    final ratio = width < 360 ? 1.0 : (width < 420 ? 1.08 : 1.2);
+    const ratio = 1.2;
 
     return Obx(
       () => GridView.count(
@@ -272,7 +272,7 @@ class AdminDashboardView extends GetView<DashboardController> {
                 child: Text(
                   'Produits en Rupture',
                   style: GoogleFonts.poppins(
-                    fontSize: (Get.width * 0.07).clamp(24.0, 30.0),
+                    fontSize: (Get.width * 0.05).clamp(18.0, 22.0),
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF161E30),
                   ),
@@ -335,7 +335,7 @@ class AdminDashboardView extends GetView<DashboardController> {
               child: Text(
                 'Dernieres Activites',
                 style: GoogleFonts.poppins(
-                  fontSize: (Get.width * 0.06).clamp(21.0, 24.0),
+                  fontSize: (Get.width * 0.05).clamp(18.0, 20.0),
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF161E30),
                 ),

@@ -171,8 +171,6 @@ class _AdminEntryFormViewState extends State<AdminEntryFormView> {
       quantity: int.parse(_quantityController.text),
       userId: userId,
     );
-    if (success) {
-      Get.back();
-    }
+    if (!success) return;
   }
 }

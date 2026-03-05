@@ -1,5 +1,6 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:product/models/user.dart';
+import 'package:product/routes/app_routes.dart';
 import 'package:product/services/user_service.dart';
 
 class UserController extends GetxController {
@@ -8,7 +9,6 @@ class UserController extends GetxController {
 
   final UserService _userService;
 
-  // État réactif
   RxList<User> users = <User>[].obs;
   RxList<User> filteredUsers = <User>[].obs;
   RxBool isLoading = false.obs;
@@ -21,22 +21,19 @@ class UserController extends GetxController {
     loadAllUsers();
   }
 
-  // CHARGER TOUS LES UTILISATEURS
   Future<void> loadAllUsers() async {
     try {
       isLoading.value = true;
       final loadedUsers = await _userService.getAllUsers();
       users.assignAll(loadedUsers);
       filteredUsers.assignAll(loadedUsers);
-    } catch (e) {
-      print('Erreur loadAllUsers: $e');
+    } catch (_) {
       Get.snackbar('Erreur', 'Erreur lors du chargement des utilisateurs');
     } finally {
       isLoading.value = false;
     }
   }
 
-  // AJOUTER UN NOUVEL UTILISATEUR
   Future<bool> addUser({
     required String id,
     required String email,
@@ -45,7 +42,6 @@ class UserController extends GetxController {
     required String name,
     String? profileImage,
   }) async {
-    // Validation
     if (email.trim().isEmpty) {
       Get.snackbar('Erreur', 'L\'email est requis');
       return false;
@@ -59,17 +55,15 @@ class UserController extends GetxController {
       return false;
     }
     if (role != 'admin' && role != 'caissier') {
-      Get.snackbar('Erreur', 'Le rôle doit être "admin" ou "caissier"');
+      Get.snackbar('Erreur', 'Le role doit etre "admin" ou "caissier"');
       return false;
     }
 
     try {
       isLoading.value = true;
-
-      // Vérifier si l'email existe déjà
       final emailTaken = await _userService.isEmailTaken(email);
       if (emailTaken) {
-        Get.snackbar('Erreur', 'Cet email est déjà utilisé');
+        Get.snackbar('Erreur', 'Cet email est deja utilise');
         return false;
       }
 
@@ -83,15 +77,18 @@ class UserController extends GetxController {
       );
 
       final success = await _userService.addUser(user);
-
       if (success) {
         users.add(user);
         filteredUsers.add(user);
-        Get.snackbar('Succès', 'Utilisateur créé avec succès');
+        Get.snackbar('Succes', 'Utilisateur cree avec succes');
+        if (Get.currentRoute == AppRoutes.adminUserForm &&
+            (Get.key.currentState?.canPop() ?? false)) {
+          Get.back(result: true);
+        }
         return true;
       }
 
-      Get.snackbar('Erreur', 'Erreur lors de la création de l\'utilisateur');
+      Get.snackbar('Erreur', 'Erreur lors de la creation de l\'utilisateur');
       return false;
     } catch (e) {
       Get.snackbar('Erreur', 'Erreur: $e');
@@ -101,38 +98,33 @@ class UserController extends GetxController {
     }
   }
 
-  // METTRE À JOUR UN UTILISATEUR
   Future<bool> updateUser({
     required String id,
     required Map<String, dynamic> updateData,
   }) async {
     try {
       isLoading.value = true;
-
-      // Récupérer l'utilisateur actuel
       final currentUser = _getUserById(id);
       if (currentUser == null) {
-        Get.snackbar('Erreur', 'Utilisateur non trouvé');
+        Get.snackbar('Erreur', 'Utilisateur non trouve');
         return false;
       }
 
-      String newEmail = updateData['email'] ?? currentUser.email;
-      String newName = updateData['name'] ?? currentUser.name;
-      String newRole = updateData['role'] ?? currentUser.role;
-      String newPassword = updateData['password'] ?? currentUser.password;
+      final newEmail = updateData['email'] ?? currentUser.email;
+      final newName = updateData['name'] ?? currentUser.name;
+      final newRole = updateData['role'] ?? currentUser.role;
+      final newPassword = updateData['password'] ?? currentUser.password;
 
-      // Vérifier si l'email est disponible (si changé)
       if (newEmail != currentUser.email) {
         final emailTaken = await _userService.isEmailTaken(newEmail);
         if (emailTaken) {
-          Get.snackbar('Erreur', 'Cet email est déjà utilisé');
+          Get.snackbar('Erreur', 'Cet email est deja utilise');
           return false;
         }
       }
 
-      // Valider le rôle
       if (newRole != 'admin' && newRole != 'caissier') {
-        Get.snackbar('Erreur', 'Le rôle doit être "admin" ou "caissier"');
+        Get.snackbar('Erreur', 'Le role doit etre "admin" ou "caissier"');
         return false;
       }
 
@@ -146,19 +138,24 @@ class UserController extends GetxController {
       );
 
       final success = await _userService.updateUser(updatedUser);
-
       if (success) {
         final index = users.indexWhere((u) => u.id == id);
         if (index != -1) {
           users[index] = updatedUser;
-          filteredUsers[filteredUsers.indexWhere((u) => u.id == id)] =
-              updatedUser;
+          final filteredIndex = filteredUsers.indexWhere((u) => u.id == id);
+          if (filteredIndex != -1) {
+            filteredUsers[filteredIndex] = updatedUser;
+          }
         }
-        Get.snackbar('Succès', 'Utilisateur mis à jour avec succès');
+        Get.snackbar('Succes', 'Utilisateur mis a jour avec succes');
+        if (Get.currentRoute == AppRoutes.adminUserForm &&
+            (Get.key.currentState?.canPop() ?? false)) {
+          Get.back(result: true);
+        }
         return true;
       }
 
-      Get.snackbar('Erreur', 'Erreur lors de la mise à jour');
+      Get.snackbar('Erreur', 'Erreur lors de la mise a jour');
       return false;
     } catch (e) {
       Get.snackbar('Erreur', 'Erreur: $e');
@@ -168,17 +165,15 @@ class UserController extends GetxController {
     }
   }
 
-  // SUPPRIMER UN UTILISATEUR
   Future<bool> deleteUser(String userId) async {
     try {
       isLoading.value = true;
-
       final success = await _userService.deleteUser(userId);
 
       if (success) {
         users.removeWhere((u) => u.id == userId);
         filteredUsers.removeWhere((u) => u.id == userId);
-        Get.snackbar('Succès', 'Utilisateur supprimé avec succès');
+        Get.snackbar('Succes', 'Utilisateur supprime avec succes');
         return true;
       }
 
@@ -192,11 +187,9 @@ class UserController extends GetxController {
     }
   }
 
-  // RECHERCHER DES UTILISATEURS
   Future<void> searchUsers(String query) async {
     try {
       searchQuery.value = query;
-
       if (query.isEmpty) {
         filteredUsers.assignAll(users);
         return;
@@ -205,26 +198,23 @@ class UserController extends GetxController {
       isLoading.value = true;
       final results = await _userService.searchUsers(query);
       filteredUsers.assignAll(results);
-    } catch (e) {
+    } catch (_) {
       Get.snackbar('Erreur', 'Erreur lors de la recherche');
     } finally {
       isLoading.value = false;
     }
   }
 
-  // RÉCUPÉRER UN UTILISATEUR PAR ID
   User? _getUserById(String id) {
     try {
       return users.firstWhere((u) => u.id == id);
-    } catch (e) {
+    } catch (_) {
       return null;
     }
   }
 
-  // FILTRER PAR RÔLE
   void filterByRole(String role) {
     selectedRole.value = role;
-
     if (role.isEmpty) {
       filteredUsers.assignAll(users);
     } else {
@@ -232,32 +222,26 @@ class UserController extends GetxController {
     }
   }
 
-  // OBTENIR TOUS LES CAISSIERS
   Future<List<User>> getAllCashiers() async {
     try {
       return await _userService.getAllCashiers();
-    } catch (e) {
-      print('Erreur getAllCashiers: $e');
+    } catch (_) {
       return [];
     }
   }
 
-  // VÉRIFIER SI UN EMAIL EST DISPONIBLE
   Future<bool> isEmailAvailable(String email) async {
     try {
       return !(await _userService.isEmailTaken(email));
-    } catch (e) {
-      print('Erreur isEmailAvailable: $e');
+    } catch (_) {
       return false;
     }
   }
 
-  // OBTENIR LE NOMBRE TOTAL D'UTILISATEURS
   Future<int> getUserCount() async {
     try {
       return await _userService.getUserCount();
-    } catch (e) {
-      print('Erreur getUserCount: $e');
+    } catch (_) {
       return 0;
     }
   }
