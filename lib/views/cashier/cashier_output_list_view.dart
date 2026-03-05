@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:product/controllers/auth_controller.dart';
 import 'package:product/controllers/output_controller.dart';
 import 'package:product/controllers/product_controller.dart';
+import 'package:product/routes/app_routes.dart';
+import 'package:product/views/common/list_form_widgets.dart';
 import 'package:product/views/common/role_guard.dart';
 
 class CashierOutputListView extends StatelessWidget {
@@ -18,6 +20,13 @@ class CashierOutputListView extends StatelessWidget {
     return RoleGuard(
       requiredRole: 'caissier',
       child: Scaffold(
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        floatingActionButton: CompactGradientFab(
+          heroTag: 'fab_cashier_outputs',
+          label: 'Ajouter',
+          isCashier: true,
+          onPressed: () => Get.toNamed(AppRoutes.cashierOutputForm),
+        ),
         appBar: AppBar(title: const Text('Mes Ventes')),
         body: Obx(() {
           final userId = authController.currentUser.value?.id;

@@ -162,3 +162,58 @@ class GradientSubmitButton extends StatelessWidget {
     );
   }
 }
+
+class CompactGradientFab extends StatelessWidget {
+  const CompactGradientFab({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    required this.heroTag,
+    this.icon = Icons.add_rounded,
+    this.isCashier = false,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final String heroTag;
+  final IconData icon;
+  final bool isCashier;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 45,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: isCashier ? AppTheme.cashierGradient : AppTheme.adminGradient,
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: AppTheme.glassShadow,
+          ),
+          child: FloatingActionButton.extended(
+            heroTag: heroTag,
+            onPressed: onPressed,
+            elevation: 0,
+            highlightElevation: 0,
+            backgroundColor: Colors.transparent,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            icon: Icon(icon, size: 18),
+            label: Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+            extendedPadding: const EdgeInsets.symmetric(horizontal: 12),
+          ),
+        ),
+      ),
+    );
+  }
+}

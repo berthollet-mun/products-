@@ -38,6 +38,12 @@ class _AdminUserListViewState extends State<AdminUserListView> {
     return RoleGuard(
       requiredRole: 'admin',
       child: Scaffold(
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        floatingActionButton: CompactGradientFab(
+          heroTag: 'fab_admin_users',
+          label: 'Ajouter',
+          onPressed: () => Get.toNamed(AppRoutes.adminUserForm),
+        ),
         body: Container(
           decoration: const BoxDecoration(gradient: AppTheme.pageGradient),
           child: SafeArea(
@@ -66,17 +72,23 @@ class _AdminUserListViewState extends State<AdminUserListView> {
                             hintText: 'Rechercher un utilisateur',
                           ),
                           SizedBox(height: gap),
-
-                             PageActionHeader(
-                            title: 'Utilisateurs',
-                            buttonLabel: 'Ajouter',
-                            onPressed: () async {
-                              await Get.toNamed(AppRoutes.adminUserForm);
-                              controller.loadAllUsers();
-                            },
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(
+                              (Get.width * 0.035).clamp(10.0, 12.0),
+                            ),
+                            decoration: AppTheme.glassCard(),
+                            child: Text(
+                              'Utilisateurs',
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w700,
+                                fontSize: (Get.width * 0.05).clamp(18.0, 22.0),
+                                color: const Color(0xFF151D2F),
+                              ),
+                            ),
                           ),
                           SizedBox(height: gap),
-                          
+
                           if (controller.isLoading.value)
                             const Padding(
                               padding: EdgeInsets.all(24),

@@ -41,6 +41,12 @@ class _AdminEntryListViewState extends State<AdminEntryListView> {
     return RoleGuard(
       requiredRole: 'admin',
       child: Scaffold(
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        floatingActionButton: CompactGradientFab(
+          heroTag: 'fab_admin_entries',
+          label: 'Ajouter',
+          onPressed: () => Get.toNamed(AppRoutes.adminEntryForm),
+        ),
         body: Container(
           decoration: const BoxDecoration(gradient: AppTheme.pageGradient),
           child: SafeArea(
@@ -61,10 +67,20 @@ class _AdminEntryListViewState extends State<AdminEntryListView> {
                       constraints: BoxConstraints(maxWidth: maxWidth),
                       child: Column(
                         children: [
-                          PageActionHeader(
-                            title: 'Entrees de Stock',
-                            buttonLabel: 'Ajouter',
-                            onPressed: () => Get.toNamed(AppRoutes.adminEntryForm),
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(
+                              (Get.width * 0.035).clamp(10.0, 12.0),
+                            ),
+                            decoration: AppTheme.glassCard(),
+                            child: Text(
+                              'Entrees de Stock',
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w700,
+                                fontSize: (Get.width * 0.05).clamp(18.0, 22.0),
+                                color: const Color(0xFF151D2F),
+                              ),
+                            ),
                           ),
                           SizedBox(height: gap),
                           SearchCardField(
