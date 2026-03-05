@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:product/theme/app_theme.dart';
 
 class AdminBottomNavigation extends StatelessWidget {
   const AdminBottomNavigation({
@@ -18,18 +20,17 @@ class AdminBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final navHeight = (Get.height * 0.12).clamp(90.0, 112.0);
+    final addButton = (Get.width * 0.18).clamp(58.0, 70.0);
     return SizedBox(
-      height: 104,
+      height: navHeight,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Container(
-            margin: const EdgeInsets.only(top: 20),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(26),
-            ),
+            margin: EdgeInsets.only(top: navHeight * 0.2),
+            padding: EdgeInsets.symmetric(horizontal: Get.width * 0.02),
+            decoration: AppTheme.glassCard(),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -43,7 +44,7 @@ class AdminBottomNavigation extends StatelessWidget {
                   color: const Color(0xFF7B8296),
                   onTap: onProductsTap,
                 ),
-                const SizedBox(width: 56),
+                SizedBox(width: addButton * 0.82),
                 _navIcon(
                   icon: Icons.outbox_rounded,
                   color: const Color(0xFF7B8296),
@@ -70,8 +71,8 @@ class AdminBottomNavigation extends StatelessWidget {
                     onTap: onAddTap,
                     customBorder: const CircleBorder(),
                     child: Container(
-                      width: 68,
-                      height: 68,
+                      width: addButton,
+                      height: addButton,
                       decoration: const BoxDecoration(
                         color: Color(0xFF40C7BE),
                         shape: BoxShape.circle,
@@ -86,7 +87,7 @@ class AdminBottomNavigation extends StatelessWidget {
                       child: const Icon(
                         Icons.add,
                         color: Colors.white,
-                        size: 38,
+                        size: 34,
                       ),
                     ),
                   ),

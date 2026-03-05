@@ -1,165 +1,207 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controllers/product_controller.dart';
-import '../../../models/product.dart';
-import '../../../utils/responsive_helper.dart';
-import '../../common/role_guard.dart';
-import 'admin_product_form_view.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:product/controllers/product_controller.dart';
+import 'package:product/models/product.dart';
+import 'package:product/routes/app_routes.dart';
+import 'package:product/theme/app_theme.dart';
+import 'package:product/views/common/list_form_widgets.dart';
+import 'package:product/views/common/role_guard.dart';
 
-class AdminProductListView extends StatelessWidget {
+class AdminProductListView extends StatefulWidget {
   const AdminProductListView({super.key});
 
   @override
+  State<AdminProductListView> createState() => _AdminProductListViewState();
+}
+
+class _AdminProductListViewState extends State<AdminProductListView> {
+  final ProductController controller = Get.find<ProductController>();
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final controller = Get.find<ProductController>();
-    final isDesktop = ResponsiveHelper.isDesktop(context);
-    final isTablet = ResponsiveHelper.isTablet(context);
+    final width = Get.width;
+    final horizontalPadding = (width * 0.045).clamp(14.0, 22.0);
+    final gap = (Get.height * 0.015).clamp(10.0, 16.0);
+    final maxWidth = math.min(width, 760.0);
 
     return RoleGuard(
       requiredRole: 'admin',
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Gestion des Produits'),
-          elevation: 0,
-          backgroundColor: Colors.blue.shade700,
-        ),
-        body: Obx(() {
-          if (controller.isLoading.value) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (controller.products.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.inventory_2,
-                    size: isDesktop ? 120 : (isTablet ? 100 : 80),
-                    color: Colors.grey.shade400,
+        body: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.pageGradient),
+          child: SafeArea(
+            child: Obx(() {
+              final products = _filteredProducts(controller.products);
+              return RefreshIndicator(
+                onRefresh: controller.loadProducts,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    gap,
+                    horizontalPadding,
+                    gap,
                   ),
-                  SizedBox(height: isDesktop ? 24 : (isTablet ? 20 : 16)),
-                  Text(
-                    'Aucun produit',
-                    style: TextStyle(
-                      fontSize: isDesktop ? 24 : (isTablet ? 20 : 18),
-                      color: Colors.grey,
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidth),
+                      child: Column(
+                        children: [
+                          PageActionHeader(
+                            title: 'Produits',
+                            buttonLabel: 'Ajouter',
+                            onPressed: () => Get.toNamed(AppRoutes.adminProductForm),
+                          ),
+                          SizedBox(height: gap),
+                          SearchCardField(
+                            controller: _searchController,
+                            onChanged: (value) {
+                              setState(() => _query = value.trim().toLowerCase());
+                            },
+                            hintText: 'Rechercher un produit',
+                          ),
+                          SizedBox(height: gap),
+                          if (controller.isLoading.value)
+                            const Padding(
+                              padding: EdgeInsets.all(24),
+                              child: CircularProgressIndicator(),
+                            )
+                          else if (products.isEmpty)
+                            _emptyState()
+                          else
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: products.length,
+                              itemBuilder: (context, index) {
+                                final product = products[index];
+                                return _productCard(product);
+                              },
+                            ),
+                        ],
+                      ),
                     ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Product> _filteredProducts(List<Product> all) {
+    if (_query.isEmpty) {
+      return all;
+    }
+    return all
+        .where(
+          (p) =>
+              p.name.toLowerCase().contains(_query) ||
+              p.sku.toLowerCase().contains(_query),
+        )
+        .toList();
+  }
+
+  Widget _productCard(Product product) {
+    final isLowStock = product.quantity <= product.stockMinimum;
+    return Dismissible(
+      key: ValueKey(product.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) => _confirmDelete(product),
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        alignment: Alignment.centerRight,
+        decoration: BoxDecoration(
+          color: const Color(0xFFFDECEC),
+          borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        ),
+        child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFC73838)),
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: EdgeInsets.all((Get.width * 0.04).clamp(12.0, 16.0)),
+        decoration: AppTheme.glassCard(),
+        child: Row(
+          children: [
+            Container(
+              width: (Get.width * 0.12).clamp(44.0, 52.0),
+              height: (Get.width * 0.12).clamp(44.0, 52.0),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDDEBFF),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.inventory_2_rounded,
+                color: AppTheme.adminPrimary,
+              ),
+            ),
+            SizedBox(width: (Get.width * 0.03).clamp(8.0, 12.0)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      product.name,
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        color: const Color(0xFF151D2F),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'SKU: ${product.sku}',
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFF707792),
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _badge(
+                        'Stock ${product.quantity}',
+                        isLowStock
+                            ? const Color(0xFFFFE9E7)
+                            : const Color(0xFFE7F7F3),
+                        isLowStock
+                            ? const Color(0xFFC94A40)
+                            : const Color(0xFF1E8D80),
+                      ),
+                      _badge(
+                        '${product.price.toStringAsFixed(2)} EUR',
+                        const Color(0xFFE9EEFF),
+                        const Color(0xFF315DAE),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            );
-          }
-
-          return Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: ResponsiveHelper.getMaxContentWidth(context),
-              ),
-              child: ListView.builder(
-                padding: EdgeInsets.all(isDesktop ? 24 : (isTablet ? 16 : 8)),
-                itemCount: controller.products.length,
-                itemBuilder: (context, index) {
-                  final product = controller.products[index];
-                  return _buildProductCard(
-                    product,
-                    controller,
-                    context,
-                    isDesktop,
-                    isTablet,
-                  );
-                },
-              ),
             ),
-          );
-        }),
-        floatingActionButton: FloatingActionButton(
-          backgroundColor: Colors.blue.shade700,
-          child: const Icon(Icons.add),
-          onPressed: () {
-            Get.to(
-              () => const AdminProductFormView(),
-              transition: Transition.rightToLeft,
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProductCard(
-    Product product,
-    ProductController controller,
-    BuildContext context,
-    bool isDesktop,
-    bool isTablet,
-  ) {
-    return Card(
-      margin: EdgeInsets.symmetric(
-        horizontal: isDesktop ? 16 : (isTablet ? 12 : 8),
-        vertical: isDesktop ? 8 : (isTablet ? 6 : 4),
-      ),
-      elevation: isDesktop ? 4 : 2,
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: isDesktop ? 24 : (isTablet ? 20 : 16),
-          vertical: isDesktop ? 12 : (isTablet ? 8 : 4),
-        ),
-        leading: Container(
-          width: isDesktop ? 70 : (isTablet ? 60 : 50),
-          height: isDesktop ? 70 : (isTablet ? 60 : 50),
-          decoration: BoxDecoration(
-            color: Colors.blue.shade100,
-            borderRadius: BorderRadius.circular(isDesktop ? 12 : 8),
-          ),
-          child: Center(
-            child: Text(
-              product.name.substring(0, 1).toUpperCase(),
-              style: TextStyle(
-                fontSize: isDesktop ? 32 : (isTablet ? 28 : 24),
-                fontWeight: FontWeight.bold,
-                color: Colors.blue.shade700,
-              ),
-            ),
-          ),
-        ),
-        title: Text(
-          product.name,
-          style: TextStyle(
-            fontSize: isDesktop ? 20 : (isTablet ? 18 : 16),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'SKU: ${product.sku}',
-              style: TextStyle(fontSize: isDesktop ? 16 : 14),
-            ),
-            Text(
-              'Stock: ${product.quantity} (min: ${product.stockMinimum}) | Prix: ${product.price} EUR',
-              style: TextStyle(fontSize: isDesktop ? 16 : 14),
-            ),
-          ],
-        ),
-        trailing: PopupMenuButton(
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              child: const Text('Modifier'),
-              onTap: () {
-                Get.to(
-                  () => AdminProductFormView(product: product),
-                  transition: Transition.rightToLeft,
-                );
-              },
-            ),
-            PopupMenuItem(
-              child: const Text(
-                'Supprimer',
-                style: TextStyle(color: Colors.red),
-              ),
-              onTap: () => _confirmDelete(context, product, controller),
+            IconButton(
+              onPressed: () =>
+                  Get.toNamed(AppRoutes.adminProductForm, arguments: product),
+              icon: const Icon(Icons.edit_rounded, color: AppTheme.adminPrimary),
             ),
           ],
         ),
@@ -167,27 +209,63 @@ class AdminProductListView extends StatelessWidget {
     );
   }
 
-  void _confirmDelete(
-    BuildContext context,
-    Product product,
-    ProductController controller,
-  ) {
-    Get.dialog(
+  Widget _badge(String value, Color background, Color textColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        value,
+        style: GoogleFonts.poppins(
+          color: textColor,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyState() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all((Get.width * 0.06).clamp(18.0, 26.0)),
+      decoration: AppTheme.glassCard(),
+      child: Column(
+        children: [
+          const Icon(Icons.inventory_2_outlined, size: 42, color: Color(0xFF8F97B0)),
+          const SizedBox(height: 10),
+          Text(
+            'Aucun produit trouve',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF6B738D),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool> _confirmDelete(Product product) async {
+    final result = await Get.dialog<bool>(
       AlertDialog(
         title: const Text('Supprimer le produit'),
-        content: Text('Voulez-vous supprimer "${product.name}"?'),
+        content: Text('Voulez-vous supprimer "${product.name}" ?'),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Annuler')),
+          TextButton(onPressed: () => Get.back(result: false), child: const Text('Annuler')),
           TextButton(
-            onPressed: () {
-              controller.deleteProduct(product.id);
-              Get.back();
-              Get.snackbar('Succès', 'Produit supprimé');
-            },
+            onPressed: () => Get.back(result: true),
             child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
+    if (result == true) {
+      await controller.deleteProduct(product.id);
+      return true;
+    }
+    return false;
   }
 }

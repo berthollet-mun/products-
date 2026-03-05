@@ -1,10 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:product/controllers/dashboard_controller.dart';
 import 'package:product/routes/app_routes.dart';
+import 'package:product/theme/app_theme.dart';
 import 'package:product/views/common/role_guard.dart';
 import 'package:product/views/dashboard/widgets/admin_bottom_navigation.dart';
 import 'package:product/views/dashboard/widgets/dashboard_header.dart';
@@ -16,221 +18,211 @@ class AdminDashboardView extends GetView<DashboardController> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final contentWidth = size.width > 700 ? 540.0 : size.width;
-    final gap = Get.height * 0.018;
+    final width = Get.width;
+    final horizontalPadding = (width * 0.05).clamp(14.0, 24.0);
+    final sectionGap = (Get.height * 0.018).clamp(10.0, 18.0);
+    final maxBodyWidth = math.min(width, 700.0);
 
     return RoleGuard(
       requiredRole: 'admin',
       child: Scaffold(
-        backgroundColor: const Color(0xFFEDEAF6),
-        body: SafeArea(
-          child: Center(
-            child: SizedBox(
-              width: contentWidth,
-              child: Obx(() {
-                if (controller.isLoading.value) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+        body: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.pageGradient),
+          child: SafeArea(
+            child: Obx(() {
+              if (controller.isLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-                return RefreshIndicator(
-                  onRefresh: controller.loadDashboardData,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        DashboardHeader(
-                          greeting: 'Mathe Joieinet!',
-                          name: controller.userName,
-                          accentColor: const Color(0xFF131A2A),
+              return RefreshIndicator(
+                onRefresh: controller.loadDashboardData,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxBodyWidth),
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          horizontalPadding,
+                          sectionGap,
+                          horizontalPadding,
+                          sectionGap,
                         ),
-                        SizedBox(height: gap),
-                        _adminBalanceCard(context),
-                        SizedBox(height: gap * 0.9),
-                        _statsGrid(context),
-                        SizedBox(height: gap),
-                        _stockAlertSection(context),
-                        SizedBox(height: gap),
-                        _activityCard(),
-                        SizedBox(height: gap * 0.9),
-                        AdminBottomNavigation(
-                          onAddTap: () => Get.toNamed(AppRoutes.adminEntryForm),
-                          onDashboardTap: () =>
-                              Get.offNamed(AppRoutes.adminDashboard),
-                          onProductsTap: () =>
-                              Get.toNamed(AppRoutes.adminProductList),
-                          onOutputsTap: () =>
-                              Get.toNamed(AppRoutes.adminOutputList),
-                          onUsersTap: () =>
-                              Get.toNamed(AppRoutes.adminUserList),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            DashboardHeader(
+                              greeting: 'Mathe Joieinet!',
+                              name: controller.userName,
+                              accentColor: const Color(0xFF151B2B),
+                            ),
+                            SizedBox(height: sectionGap),
+                            _adminMainCard(),
+                            SizedBox(height: sectionGap),
+                            _statsGrid(),
+                            SizedBox(height: sectionGap),
+                            _stockAlertSection(),
+                            SizedBox(height: sectionGap),
+                            _activitySection(),
+                            SizedBox(height: sectionGap),
+                            AdminBottomNavigation(
+                              onAddTap: () =>
+                                  Get.toNamed(AppRoutes.adminEntryForm),
+                              onDashboardTap: () =>
+                                  Get.offNamed(AppRoutes.adminDashboard),
+                              onProductsTap: () =>
+                                  Get.toNamed(AppRoutes.adminProductList),
+                              onOutputsTap: () =>
+                                  Get.toNamed(AppRoutes.adminOutputList),
+                              onUsersTap: () => Get.toNamed(AppRoutes.adminUserList),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _adminMainCard() {
+    final compact = Get.width < 360;
+    final titleSize = compact ? 20.0 : 24.0;
+    final amountSize = compact ? 34.0 : 42.0;
+
+    return AspectRatio(
+      aspectRatio: compact ? 1.45 : 1.72,
+      child: Container(
+        padding: EdgeInsets.all((Get.width * 0.04).clamp(12.0, 20.0)),
+        decoration: AppTheme.glassCard(gradient: AppTheme.adminGradient),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              left: Get.width * 0.34,
+              child: Padding(
+                padding: EdgeInsets.only(top: Get.height * 0.04),
+                child: Obx(
+                  () => LineChart(
+                    LineChartData(
+                      minY: 0,
+                      titlesData: const FlTitlesData(show: false),
+                      borderData: FlBorderData(show: false),
+                      gridData: const FlGridData(show: false),
+                      lineTouchData: const LineTouchData(enabled: false),
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: List.generate(
+                            controller.adminLineSeries.length,
+                            (i) => FlSpot(
+                              i.toDouble(),
+                              controller.adminLineSeries[i],
+                            ),
+                          ),
+                          isCurved: true,
+                          barWidth: 2.5,
+                          color: Colors.white,
+                          dotData: const FlDotData(show: false),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white.withValues(alpha: 0.25),
+                                Colors.white.withValues(alpha: 0.02),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                );
-              }),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _adminBalanceCard(BuildContext context) {
-    final cardHeight = (Get.height * 0.24).clamp(160.0, 220.0);
-
-    return Container(
-      height: cardHeight,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2D79E6), Color(0xFF0B47A1)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Stack(
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final compact = constraints.maxWidth < 360;
-              final titleSize = compact ? 18.0 : 27.0;
-              final amountSize = compact ? 32.0 : 44.0;
-              final chartLeftPadding = compact
-                  ? constraints.maxWidth * 0.46
-                  : 110.0;
-
-              return Stack(
+            Obx(
+              () => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Positioned.fill(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(chartLeftPadding, 22, 8, 10),
-                      child: Obx(
-                        () => LineChart(
-                          LineChartData(
-                            minY: 0,
-                            gridData: const FlGridData(show: false),
-                            titlesData: const FlTitlesData(show: false),
-                            borderData: FlBorderData(show: false),
-                            lineTouchData: const LineTouchData(enabled: false),
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: List.generate(
-                                  controller.adminLineSeries.length,
-                                  (i) => FlSpot(
-                                    i.toDouble(),
-                                    controller.adminLineSeries[i],
-                                  ),
-                                ),
-                                isCurved: true,
-                                color: Colors.white.withValues(alpha: 0.9),
-                                barWidth: 2.3,
-                                dotData: const FlDotData(show: false),
-                                belowBarData: BarAreaData(
-                                  show: true,
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.white.withValues(alpha: 0.28),
-                                      Colors.white.withValues(alpha: 0.02),
-                                    ],
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Tableau de bord Admin',
+                      style: GoogleFonts.poppins(
+                        fontSize: titleSize,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: (Get.height * 0.01).clamp(6.0, 12.0)),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '\u20AC${controller.adminAmount.value.toStringAsFixed(2)}',
+                      style: GoogleFonts.poppins(
+                        fontSize: amountSize,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: (Get.height * 0.006).clamp(4.0, 10.0)),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: (Get.width * 0.03).clamp(10.0, 14.0),
+                      vertical: (Get.height * 0.006).clamp(3.0, 6.0),
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '+ ${controller.incomingToday.value * 24} cette semaine',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
                         ),
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Obx(
-                      () => Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              'Tableau de bord Admin',
-                              style: GoogleFonts.poppins(
-                                color: Colors.white,
-                                fontSize: titleSize,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          SizedBox(height: compact ? 6 : 12),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              '€${controller.adminAmount.value.toStringAsFixed(2)}',
-                              style: GoogleFonts.poppins(
-                                color: Colors.white,
-                                fontSize: amountSize,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: compact ? 6 : 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                '+ ${controller.incomingToday.value * 24} cette semaine',
-                                style: GoogleFonts.poppins(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ],
-              );
-            },
-          ),
-        ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _statsGrid(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final ratio = width < 360 ? 0.92 : (width < 420 ? 1.02 : 1.18);
+  Widget _statsGrid() {
+    final width = Get.width;
+    final ratio = width < 360 ? 1.0 : (width < 420 ? 1.08 : 1.2);
 
     return Obx(
       () => GridView.count(
         crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
         childAspectRatio: ratio,
-        shrinkWrap: true,
+        crossAxisSpacing: (width * 0.025).clamp(8.0, 14.0),
+        mainAxisSpacing: (width * 0.025).clamp(8.0, 14.0),
         physics: const NeverScrollableScrollPhysics(),
+        shrinkWrap: true,
         children: [
           DashboardStatCard(
             title: 'Total Produits',
             value: '${controller.totalProducts.value}',
             icon: Icons.inventory_2_rounded,
-            iconColor: const Color(0xFF26A69A),
+            iconColor: const Color(0xFF2AA79D),
           ),
           DashboardStatCard(
             title: 'Entrees',
@@ -258,123 +250,74 @@ class AdminDashboardView extends GetView<DashboardController> {
     );
   }
 
-  Widget _stockAlertSection(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 380;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _stockAlertSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            if (compact)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Produits en Rupture',
-                      style: GoogleFonts.poppins(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF161E30),
-                      ),
-                    ),
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Produits en Rupture',
+                  style: GoogleFonts.poppins(
+                    fontSize: (Get.width * 0.07).clamp(24.0, 30.0),
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF161E30),
                   ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton(
-                      onPressed: () => Get.toNamed(AppRoutes.adminProductList),
-                      child: Text(
-                        'Alertes',
-                        style: GoogleFonts.poppins(
-                          color: const Color(0xFF697089),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            else
-              Row(
-                children: [
-                  Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Produits en Rupture',
-                        style: GoogleFonts.poppins(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF161E30),
-                        ),
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => Get.toNamed(AppRoutes.adminProductList),
-                    child: Text(
-                      'Alertes',
-                      style: GoogleFonts.poppins(
-                        color: const Color(0xFF697089),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            const SizedBox(height: 8),
-            Obx(() {
-              if (controller.lowStockProducts.isEmpty) {
-                return Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'Aucune alerte de stock actuellement.',
-                    style: GoogleFonts.poppins(color: const Color(0xFF6C748C)),
-                  ),
-                );
-              }
-
-              return Column(
-                children: controller.lowStockProducts
-                    .map(
-                      (p) => StockAlertTile(
-                        productName: p.name,
-                        quantity: p.quantity,
-                      ),
-                    )
-                    .toList(),
-              );
-            }),
+            ),
+            TextButton(
+              onPressed: () => Get.toNamed(AppRoutes.adminProductList),
+              child: Text(
+                'Alertes',
+                style: GoogleFonts.poppins(
+                  color: const Color(0xFF697089),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ],
-        );
-      },
+        ),
+        SizedBox(height: (Get.height * 0.008).clamp(6.0, 10.0)),
+        Obx(() {
+          if (controller.lowStockProducts.isEmpty) {
+            return Container(
+              padding: EdgeInsets.all((Get.width * 0.04).clamp(12.0, 16.0)),
+              decoration: AppTheme.glassCard(),
+              child: Text(
+                'Aucune alerte de stock actuellement.',
+                style: GoogleFonts.poppins(color: const Color(0xFF6C748C)),
+              ),
+            );
+          }
+
+          return Column(
+            children: controller.lowStockProducts
+                .map(
+                  (product) => StockAlertTile(
+                    productName: product.name,
+                    quantity: product.quantity,
+                  ),
+                )
+                .toList(),
+          );
+        }),
+      ],
     );
   }
 
-  Widget _activityCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, 0.05),
-            blurRadius: 24,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Obx(
-        () => Column(
+  Widget _activitySection() {
+    final chartSize = (Get.width * 0.45).clamp(150.0, 210.0);
+
+    return Obx(
+      () => Container(
+        padding: EdgeInsets.all((Get.width * 0.045).clamp(12.0, 18.0)),
+        decoration: AppTheme.glassCard(),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             FittedBox(
@@ -383,48 +326,72 @@ class AdminDashboardView extends GetView<DashboardController> {
               child: Text(
                 'Dernieres Activites',
                 style: GoogleFonts.poppins(
-                  fontSize: 23,
+                  fontSize: (Get.width * 0.06).clamp(21.0, 24.0),
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF161E30),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: (Get.height * 0.014).clamp(8.0, 14.0)),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _flowCount(
-                  'Entrees',
-                  controller.incomingToday.value,
-                  const Color(0xFF40C7BE),
+                Expanded(
+                  child: _flowPill(
+                    title: 'Entrees',
+                    value: controller.incomingToday.value,
+                    color: const Color(0xFF40C7BE),
+                  ),
                 ),
-                _flowCount(
-                  'Sorties',
-                  controller.outgoingToday.value,
-                  const Color(0xFFF2AE3F),
+                SizedBox(width: (Get.width * 0.025).clamp(8.0, 12.0)),
+                Expanded(
+                  child: _flowPill(
+                    title: 'Sorties',
+                    value: controller.outgoingToday.value,
+                    color: const Color(0xFFF2AE3F),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: (Get.height * 0.02).clamp(12.0, 20.0)),
             Center(
-              child: CircularPercentIndicator(
-                radius: (Get.width * 0.28).clamp(84.0, 110.0),
-                lineWidth: 18,
-                percent: controller.semiCirclePercent.value.clamp(0.0, 1.0),
-                arcType: ArcType.HALF,
-                startAngle: 180,
-                circularStrokeCap: CircularStrokeCap.round,
-                backgroundColor: const Color(0xFFECEEF6),
-                progressColor: const Color(0xFF31C1DE),
-                center: Padding(
-                  padding: const EdgeInsets.only(top: 24),
-                  child: Text(
-                    '${(controller.semiCirclePercent.value * 100).toStringAsFixed(1)}%',
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF111A2B),
-                    ),
+              child: SizedBox(
+                width: chartSize,
+                height: chartSize,
+                child: PieChart(
+                  PieChartData(
+                    sectionsSpace: 2,
+                    centerSpaceRadius: chartSize * 0.28,
+                    startDegreeOffset: -90,
+                    sections: [
+                      PieChartSectionData(
+                        color: const Color(0xFF31C1DE),
+                        value: (controller.semiCirclePercent.value * 100)
+                            .clamp(0, 100),
+                        radius: chartSize * 0.18,
+                        title: '',
+                      ),
+                      PieChartSectionData(
+                        color: const Color(0xFFF2AE3F),
+                        value: ((1 - controller.semiCirclePercent.value) * 100)
+                            .clamp(0, 100),
+                        radius: chartSize * 0.18,
+                        title: '',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: (Get.height * 0.008).clamp(4.0, 10.0)),
+            Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '${(controller.semiCirclePercent.value * 100).toStringAsFixed(1)}% Sorties',
+                  style: GoogleFonts.poppins(
+                    color: const Color(0xFF111A2B),
+                    fontWeight: FontWeight.w700,
+                    fontSize: (Get.width * 0.048).clamp(15.0, 18.0),
                   ),
                 ),
               ),
@@ -435,33 +402,58 @@ class AdminDashboardView extends GetView<DashboardController> {
     );
   }
 
-  Widget _flowCount(String title, int value, Color badgeColor) {
-    return Column(
-      children: [
-        Text(
-          '$title: $value',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF182033),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: badgeColor.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            '${(value * 0.1).toStringAsFixed(1)}%',
-            style: GoogleFonts.poppins(
-              color: badgeColor,
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
+  Widget _flowPill({
+    required String title,
+    required int value,
+    required Color color,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: (Get.width * 0.03).clamp(10.0, 14.0),
+        vertical: (Get.height * 0.01).clamp(8.0, 12.0),
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius - 6),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '$title : $value',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF182033),
+              ),
             ),
           ),
-        ),
-      ],
+          SizedBox(height: (Get.height * 0.004).clamp(2.0, 8.0)),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: (Get.width * 0.022).clamp(8.0, 10.0),
+              vertical: (Get.height * 0.003).clamp(2.0, 4.0),
+            ),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '${(value * 0.1).toStringAsFixed(1)}%',
+                style: GoogleFonts.poppins(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

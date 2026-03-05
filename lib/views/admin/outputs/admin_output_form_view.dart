@@ -1,8 +1,13 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:product/controllers/auth_controller.dart';
 import 'package:product/controllers/output_controller.dart';
 import 'package:product/controllers/product_controller.dart';
+import 'package:product/theme/app_theme.dart';
+import 'package:product/views/common/list_form_widgets.dart';
 import 'package:product/views/common/role_guard.dart';
 
 class AdminOutputFormView extends StatefulWidget {
@@ -13,15 +18,9 @@ class AdminOutputFormView extends StatefulWidget {
 }
 
 class _AdminOutputFormViewState extends State<AdminOutputFormView> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _quantityController;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _quantityController = TextEditingController();
   String? _selectedProductId;
-
-  @override
-  void initState() {
-    super.initState();
-    _quantityController = TextEditingController();
-  }
 
   @override
   void dispose() {
@@ -32,73 +31,99 @@ class _AdminOutputFormViewState extends State<AdminOutputFormView> {
   @override
   Widget build(BuildContext context) {
     final productController = Get.find<ProductController>();
+    final width = Get.width;
+    final maxWidth = math.min(width, 720.0);
+    final horizontalPadding = (width * 0.05).clamp(14.0, 24.0);
 
     return RoleGuard(
       requiredRole: 'admin',
       child: Scaffold(
-        appBar: AppBar(title: const Text('Enregistrer une Sortie')),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                Obx(() {
-                  if (productController.products.isEmpty) {
-                    return const Text('Aucun produit disponible');
-                  }
-                  return DropdownButtonFormField<String>(
-                    initialValue: _selectedProductId,
-                    decoration: const InputDecoration(
-                      labelText: 'Produit',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: productController.products
-                        .where((product) => product.quantity > 0)
-                        .map(
-                          (product) => DropdownMenuItem<String>(
-                            value: product.id,
-                            child: Text(
-                              '${product.name} (stock: ${product.quantity})',
+        body: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.pageGradient),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                (Get.height * 0.015).clamp(10.0, 18.0),
+                horizontalPadding,
+                (Get.height * 0.02).clamp(14.0, 24.0),
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Container(
+                    padding: EdgeInsets.all((width * 0.05).clamp(14.0, 22.0)),
+                    decoration: AppTheme.glassCard(),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _titleRow('Ajouter Sortie'),
+                          const SizedBox(height: 20),
+                          Obx(() {
+                            final available = productController.products
+                                .where((product) => product.quantity > 0)
+                                .toList();
+                            if (available.isEmpty) {
+                              return Text(
+                                'Aucun produit disponible',
+                                style: GoogleFonts.poppins(color: const Color(0xFF707792)),
+                              );
+                            }
+                            return DropdownButtonFormField<String>(
+                              initialValue: _selectedProductId,
+                              decoration: const InputDecoration(
+                                hintText: 'Produit',
+                                prefixIcon: Icon(
+                                  Icons.inventory_2_rounded,
+                                  color: AppTheme.adminPrimary,
+                                ),
+                              ),
+                              items: available
+                                  .map(
+                                    (product) => DropdownMenuItem<String>(
+                                      value: product.id,
+                                      child: Text('${product.name} (stock: ${product.quantity})'),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) => setState(() => _selectedProductId = value),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Selectionnez un produit';
+                                }
+                                return null;
+                              },
+                            );
+                          }),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            controller: _quantityController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              hintText: 'Quantite',
+                              prefixIcon: Icon(
+                                Icons.numbers_rounded,
+                                color: AppTheme.adminPrimary,
+                              ),
                             ),
+                            validator: (value) {
+                              final qty = int.tryParse(value ?? '');
+                              if (qty == null || qty <= 0) {
+                                return 'Quantite invalide';
+                              }
+                              return null;
+                            },
                           ),
-                        )
-                        .toList(),
-                    onChanged: (value) =>
-                        setState(() => _selectedProductId = value),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Selectionnez un produit';
-                      }
-                      return null;
-                    },
-                  );
-                }),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _quantityController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Quantite',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    final quantity = int.tryParse(value ?? '');
-                    if (quantity == null || quantity <= 0) {
-                      return 'Quantite invalide';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _submit,
-                    child: const Text('Enregistrer'),
+                          const SizedBox(height: 20),
+                          GradientSubmitButton(label: 'Enregistrer', onPressed: _submit),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -106,11 +131,35 @@ class _AdminOutputFormViewState extends State<AdminOutputFormView> {
     );
   }
 
+  Widget _titleRow(String title) {
+    return Row(
+      children: [
+        IconButton(
+          onPressed: Get.back,
+          icon: const Icon(Icons.arrow_back_rounded, color: AppTheme.adminDark),
+        ),
+        Expanded(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: (Get.width * 0.07).clamp(24.0, 32.0),
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF151D2F),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-
     final outputController = Get.find<OutputController>();
     final authController = Get.find<AuthController>();
     final userId = authController.currentUser.value?.id;
@@ -125,7 +174,6 @@ class _AdminOutputFormViewState extends State<AdminOutputFormView> {
       quantity: int.parse(_quantityController.text),
       userId: userId,
     );
-
     if (success) {
       Get.back();
     }

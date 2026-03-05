@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:product/theme/app_theme.dart';
 
 class StockAlertTile extends StatelessWidget {
   const StockAlertTile({
@@ -16,17 +17,7 @@ class StockAlertTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, 0.05),
-            blurRadius: 20,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
+      decoration: AppTheme.glassCard(),
       child: Row(
         children: [
           Container(

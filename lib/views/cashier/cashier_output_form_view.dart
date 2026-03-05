@@ -1,10 +1,14 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controllers/auth_controller.dart';
-import '../../controllers/output_controller.dart';
-import '../../controllers/product_controller.dart';
-import '../../utils/responsive_helper.dart';
-import '../common/role_guard.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:product/controllers/auth_controller.dart';
+import 'package:product/controllers/output_controller.dart';
+import 'package:product/controllers/product_controller.dart';
+import 'package:product/theme/app_theme.dart';
+import 'package:product/views/common/list_form_widgets.dart';
+import 'package:product/views/common/role_guard.dart';
 
 class CashierOutputFormView extends StatefulWidget {
   const CashierOutputFormView({super.key});
@@ -14,355 +18,166 @@ class CashierOutputFormView extends StatefulWidget {
 }
 
 class _CashierOutputFormViewState extends State<CashierOutputFormView> {
-  late TextEditingController quantityController;
-  late TextEditingController dateController;
-  String? selectedProductId;
-  final formKey = GlobalKey<FormState>();
-
-  @override
-  void initState() {
-    super.initState();
-    quantityController = TextEditingController();
-    dateController = TextEditingController(
-      text: DateTime.now().toString().split(' ')[0],
-    );
-  }
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _quantityController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController(
+    text: DateTime.now().toString().split(' ')[0],
+  );
+  String? _selectedProductId;
 
   @override
   void dispose() {
-    quantityController.dispose();
-    dateController.dispose();
+    _quantityController.dispose();
+    _dateController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final productController = Get.find<ProductController>();
-    final isDesktop = ResponsiveHelper.isDesktop(context);
-    final isTablet = ResponsiveHelper.isTablet(context);
+    final width = Get.width;
+    final maxWidth = math.min(width, 720.0);
+    final horizontalPadding = (width * 0.05).clamp(14.0, 24.0);
 
     return RoleGuard(
       requiredRole: 'caissier',
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Enregistrer une Vente'),
-          backgroundColor: Colors.teal.shade700,
-        ),
-        body: SingleChildScrollView(
-          padding: EdgeInsets.all(isDesktop ? 32 : (isTablet ? 24 : 16)),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: isDesktop ? 800 : (isTablet ? 600 : double.infinity),
+        body: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.pageGradient),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                (Get.height * 0.015).clamp(10.0, 18.0),
+                horizontalPadding,
+                (Get.height * 0.02).clamp(14.0, 24.0),
               ),
-              child: Form(
-                key: formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    Container(
-                      padding: EdgeInsets.all(isDesktop ? 20 : 16),
-                      decoration: BoxDecoration(
-                        color: Colors.teal.shade50,
-                        borderRadius: BorderRadius.circular(isDesktop ? 12 : 8),
-                      ),
-                      child: Row(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Container(
+                    padding: EdgeInsets.all((width * 0.05).clamp(14.0, 22.0)),
+                    decoration: AppTheme.glassCard(),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.shopping_cart,
-                            color: Colors.teal.shade700,
-                            size: isDesktop ? 32 : 28,
-                          ),
-                          SizedBox(width: isDesktop ? 16 : 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Nouvelle Vente',
-                                  style: TextStyle(
-                                    fontSize: isDesktop ? 20 : 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.teal.shade700,
-                                  ),
+                          _titleRow('Enregistrer Vente'),
+                          const SizedBox(height: 20),
+                          Obx(() {
+                            final available = productController.products
+                                .where((p) => p.quantity > 0)
+                                .toList();
+                            if (available.isEmpty) {
+                              return Text(
+                                'Aucun produit disponible',
+                                style: GoogleFonts.poppins(color: const Color(0xFF707792)),
+                              );
+                            }
+                            return DropdownButtonFormField<String>(
+                              initialValue: _selectedProductId,
+                              decoration: const InputDecoration(
+                                hintText: 'Selectionner un produit',
+                                prefixIcon: Icon(
+                                  Icons.inventory_2_rounded,
+                                  color: AppTheme.cashierPrimary,
                                 ),
-                                SizedBox(height: isDesktop ? 4 : 2),
-                                Text(
-                                  'Sélectionnez un produit et entrez la quantité vendue',
-                                  style: TextStyle(
-                                    fontSize: isDesktop ? 16 : 14,
-                                    color: Colors.teal.shade600,
-                                  ),
-                                ),
-                              ],
+                              ),
+                              items: available
+                                  .map(
+                                    (product) => DropdownMenuItem<String>(
+                                      value: product.id,
+                                      child: Text(
+                                        '${product.name} (Stock: ${product.quantity})',
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) => setState(() => _selectedProductId = value),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Selectionnez un produit';
+                                }
+                                return null;
+                              },
+                            );
+                          }),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            controller: _quantityController,
+                            keyboardType: TextInputType.number,
+                            onChanged: (_) => setState(() {}),
+                            decoration: const InputDecoration(
+                              hintText: 'Quantite vendue',
+                              prefixIcon: Icon(
+                                Icons.numbers_rounded,
+                                color: AppTheme.cashierPrimary,
+                              ),
                             ),
+                            validator: (value) {
+                              final qty = int.tryParse(value ?? '');
+                              if (qty == null || qty <= 0) {
+                                return 'Quantite invalide';
+                              }
+                              if (_selectedProductId != null) {
+                                final product = Get.find<ProductController>().products
+                                    .firstWhereOrNull((p) => p.id == _selectedProductId);
+                                if (product != null && qty > product.quantity) {
+                                  return 'Stock insuffisant (${product.quantity} disponible)';
+                                }
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            controller: _dateController,
+                            readOnly: true,
+                            decoration: const InputDecoration(
+                              hintText: 'Date',
+                              prefixIcon: Icon(
+                                Icons.calendar_today_rounded,
+                                color: AppTheme.cashierPrimary,
+                              ),
+                            ),
+                            onTap: _pickDate,
+                          ),
+                          const SizedBox(height: 20),
+                          Obx(() {
+                            final product = productController.products
+                                .firstWhereOrNull((p) => p.id == _selectedProductId);
+                            final quantity = int.tryParse(_quantityController.text) ?? 0;
+                            final total = (product?.price ?? 0) * quantity;
+                            if (product == null || quantity <= 0) {
+                              return const SizedBox.shrink();
+                            }
+                            return Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all((Get.width * 0.04).clamp(12.0, 16.0)),
+                              decoration: AppTheme.glassCard(color: const Color(0xFFEFF9F8)),
+                              child: Wrap(
+                                runSpacing: 8,
+                                children: [
+                                  _summaryRow('Produit', product.name),
+                                  _summaryRow('Prix unitaire', '${product.price.toStringAsFixed(2)} EUR'),
+                                  _summaryRow('Quantite', quantity.toString()),
+                                  _summaryRow('Total', '${total.toStringAsFixed(2)} EUR'),
+                                ],
+                              ),
+                            );
+                          }),
+                          const SizedBox(height: 20),
+                          GradientSubmitButton(
+                            label: 'Enregistrer',
+                            onPressed: _submit,
+                            isCashier: true,
+                            icon: Icons.point_of_sale_rounded,
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(height: isDesktop ? 32 : (isTablet ? 28 : 24)),
-
-                    // Product Selection
-                    Obx(() {
-                      if (productController.products.isEmpty) {
-                        return Container(
-                          padding: EdgeInsets.all(isDesktop ? 16 : 12),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade100,
-                            borderRadius: BorderRadius.circular(
-                              isDesktop ? 12 : 8,
-                            ),
-                          ),
-                          child: Text(
-                            'Aucun produit disponible',
-                            style: TextStyle(fontSize: isDesktop ? 18 : 16),
-                          ),
-                        );
-                      }
-
-                      return DropdownButtonFormField<String>(
-                        initialValue: selectedProductId,
-                        decoration: InputDecoration(
-                          labelText: 'Sélectionner un produit',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              isDesktop ? 12 : 8,
-                            ),
-                          ),
-                          prefixIcon: Icon(
-                            Icons.inventory_2,
-                            color: Colors.teal.shade700,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                            vertical: isDesktop ? 20 : 16,
-                          ),
-                        ),
-                        items: productController.products
-                            .where((p) => p.quantity > 0)
-                            .map((product) {
-                              return DropdownMenuItem(
-                                value: product.id,
-                                child: Text(
-                                  '${product.name} (Stock: ${product.quantity} | Prix: ${product.price}€)',
-                                  style: TextStyle(
-                                    fontSize: isDesktop ? 16 : 14,
-                                  ),
-                                ),
-                              );
-                            })
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() => selectedProductId = value);
-                        },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Veuillez sélectionner un produit';
-                          }
-                          return null;
-                        },
-                      );
-                    }),
-                    SizedBox(height: isDesktop ? 24 : (isTablet ? 20 : 16)),
-
-                    // Quantity Field
-                    TextFormField(
-                      controller: quantityController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: 'Quantité vendue',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            isDesktop ? 12 : 8,
-                          ),
-                        ),
-                        prefixIcon: Icon(
-                          Icons.numbers,
-                          color: Colors.teal.shade700,
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          vertical: isDesktop ? 20 : 16,
-                        ),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          // Trigger rebuild to update validation
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'La quantité est requise';
-                        }
-                        final qty = int.tryParse(value);
-                        if (qty == null || qty <= 0) {
-                          return 'Quantité invalide';
-                        }
-
-                        if (selectedProductId != null) {
-                          final product = Get.find<ProductController>().products
-                              .firstWhereOrNull(
-                                (p) => p.id == selectedProductId,
-                              );
-                          if (product != null && qty > product.quantity) {
-                            return 'Stock insuffisant (${product.quantity} disponible)';
-                          }
-                        }
-
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: isDesktop ? 24 : (isTablet ? 20 : 16)),
-
-                    // Date Field
-                    TextFormField(
-                      controller: dateController,
-                      readOnly: true,
-                      decoration: InputDecoration(
-                        labelText: 'Date de vente',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            isDesktop ? 12 : 8,
-                          ),
-                        ),
-                        prefixIcon: Icon(
-                          Icons.calendar_today,
-                          color: Colors.teal.shade700,
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          vertical: isDesktop ? 20 : 16,
-                        ),
-                      ),
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime.now().subtract(
-                            const Duration(days: 365),
-                          ),
-                          lastDate: DateTime.now(),
-                        );
-                        if (date != null) {
-                          dateController.text = date.toString().split(' ')[0];
-                        }
-                      },
-                    ),
-
-                    // Summary Card
-                    if (selectedProductId != null &&
-                        quantityController.text.isNotEmpty)
-                      Container(
-                        margin: EdgeInsets.only(top: isDesktop ? 32 : 24),
-                        padding: EdgeInsets.all(isDesktop ? 24 : 16),
-                        decoration: BoxDecoration(
-                          color: Colors.teal.shade50,
-                          borderRadius: BorderRadius.circular(
-                            isDesktop ? 12 : 8,
-                          ),
-                          border: Border.all(color: Colors.teal.shade200),
-                        ),
-                        child: Obx(() {
-                          final product = Get.find<ProductController>().products
-                              .firstWhereOrNull(
-                                (p) => p.id == selectedProductId,
-                              );
-                          final quantity =
-                              int.tryParse(quantityController.text) ?? 0;
-                          final total = (product?.price ?? 0) * quantity;
-
-                          return Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Prix unitaire:',
-                                    style: TextStyle(
-                                      fontSize: isDesktop ? 16 : 14,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${product?.price ?? 0}€',
-                                    style: TextStyle(
-                                      fontSize: isDesktop ? 18 : 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: isDesktop ? 12 : 8),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Quantité:',
-                                    style: TextStyle(
-                                      fontSize: isDesktop ? 16 : 14,
-                                    ),
-                                  ),
-                                  Text(
-                                    quantity.toString(),
-                                    style: TextStyle(
-                                      fontSize: isDesktop ? 18 : 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Divider(height: 24),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'TOTAL:',
-                                    style: TextStyle(
-                                      fontSize: isDesktop ? 20 : 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.teal.shade700,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${total.toStringAsFixed(2)}€',
-                                    style: TextStyle(
-                                      fontSize: isDesktop ? 24 : 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.teal.shade700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          );
-                        }),
-                      ),
-
-                    SizedBox(height: isDesktop ? 32 : (isTablet ? 28 : 24)),
-                    SizedBox(
-                      width: double.infinity,
-                      height: isDesktop ? 56 : (isTablet ? 52 : 48),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal.shade700,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              isDesktop ? 12 : 8,
-                            ),
-                          ),
-                        ),
-                        onPressed: _handleSubmit,
-                        child: Text(
-                          'VALIDER LA VENTE',
-                          style: TextStyle(
-                            fontSize: isDesktop ? 18 : 16,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -372,39 +187,90 @@ class _CashierOutputFormViewState extends State<CashierOutputFormView> {
     );
   }
 
-  Future<void> _handleSubmit() async {
-    if (!formKey.currentState!.validate()) return;
-
-    final outputController = Get.find<OutputController>();
-    final auth = Get.find<AuthController>();
-    final productController = Get.find<ProductController>();
-
-    // Get product for price calculation
-    final product = productController.products.firstWhereOrNull(
-      (p) => p.id == selectedProductId,
+  Widget _titleRow(String title) {
+    return Row(
+      children: [
+        IconButton(
+          onPressed: Get.back,
+          icon: const Icon(Icons.arrow_back_rounded, color: AppTheme.cashierDark),
+        ),
+        Expanded(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: (Get.width * 0.07).clamp(24.0, 32.0),
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF151D2F),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
+  }
 
-    if (product == null) {
-      Get.snackbar('Erreur', 'Produit non trouvé');
+  Widget _summaryRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            color: const Color(0xFF5E6782),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            style: GoogleFonts.poppins(
+              color: AppTheme.cashierDark,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickDate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now(),
+    );
+    if (date != null) {
+      _dateController.text = date.toString().split(' ')[0];
+    }
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    final outputController = Get.find<OutputController>();
+    final authController = Get.find<AuthController>();
+    final userId = authController.currentUser.value?.id;
+
+    if (userId == null || _selectedProductId == null) {
+      Get.snackbar('Erreur', 'Utilisateur ou produit invalide');
       return;
     }
 
     final success = await outputController.createOutput(
-      productId: selectedProductId!,
-      quantity: int.parse(quantityController.text),
-      userId: auth.currentUser.value?.id ?? 'unknown',
+      productId: _selectedProductId!,
+      quantity: int.parse(_quantityController.text),
+      userId: userId,
     );
 
     if (success) {
       Get.back();
-      Get.snackbar(
-        'Succès',
-        'Vente enregistrée avec succès!',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-    } else {
-      Get.snackbar('Erreur', 'Impossible d\'enregistrer la vente');
+      Get.snackbar('Succes', 'Vente enregistree');
     }
   }
 }

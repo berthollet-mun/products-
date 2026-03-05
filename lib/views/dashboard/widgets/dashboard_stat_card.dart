@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:product/theme/app_theme.dart';
 
 class DashboardStatCard extends StatelessWidget {
   const DashboardStatCard({
@@ -28,17 +29,7 @@ class DashboardStatCard extends StatelessWidget {
 
         return Container(
           padding: EdgeInsets.all(compact ? 12 : 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: const [
-              BoxShadow(
-                color: Color.fromRGBO(0, 0, 0, 0.05),
-                blurRadius: 24,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
+          decoration: AppTheme.glassCard(),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,7 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:product/controllers/auth_controller.dart';
-import 'package:product/utils/responsive_helper.dart';
+import 'package:product/theme/app_theme.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -41,207 +44,248 @@ class _LoginViewState extends State<LoginView> {
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = ResponsiveHelper.isDesktop(context);
-    final isTablet = ResponsiveHelper.isTablet(context);
+    final width = Get.width;
+    final isCompact = width < 360;
+    final bodyWidth = math.min(width, 560.0);
+    final horizontalPadding = (width * 0.06).clamp(16.0, 36.0);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1E0701),
-      resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: isDesktop ? 64 : (isTablet ? 48 : 30),
-            ),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: isDesktop ? 500 : (isTablet ? 450 : double.infinity),
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppTheme.pageGradient),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: (Get.height * 0.02).clamp(12.0, 24.0),
               ),
-              child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Icon(
-                      Icons.inventory_2_outlined,
-                      size: isDesktop ? 60 : (isTablet ? 50 : 40),
-                      color: Colors.white,
-                    ),
-                    SizedBox(height: isDesktop ? 16 : (isTablet ? 14 : 12)),
-                    Text(
-                      'Gestion de Stock',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: isDesktop ? 24 : (isTablet ? 20 : 18),
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: isDesktop ? 8 : (isTablet ? 6 : 6)),
-                    Text(
-                      'Connectez-vous',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: isDesktop ? 12 : (isTablet ? 11 : 10),
-                        color: Colors.white70,
-                      ),
-                    ),
-                    SizedBox(height: isDesktop ? 28 : (isTablet ? 24 : 20)),
-
-                    // EMAIL
-                    TextFormField(
-                      controller: emailController,
-                      focusNode: emailFocus,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      style: const TextStyle(color: Colors.white),
-                      onFieldSubmitted: (_) => passwordFocus.requestFocus(),
-                      onTapOutside: (_) =>
-                          FocusManager.instance.primaryFocus?.unfocus(),
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        labelStyle: const TextStyle(color: Colors.white70),
-                        prefixIcon: const Icon(
-                          Icons.email_outlined,
-                          color: Colors.white,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: bodyWidth),
+                child: Container(
+                  padding: EdgeInsets.all((width * 0.055).clamp(16.0, 28.0)),
+                  decoration: AppTheme.glassCard(),
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _header(isCompact),
+                        SizedBox(height: (Get.height * 0.028).clamp(18.0, 28.0)),
+                        _textField(
+                          controller: emailController,
+                          focusNode: emailFocus,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          hint: 'Nom d\'utilisateur / Email',
+                          icon: Icons.mail_outline_rounded,
+                          iconColor: const Color(0xFF2B9FAF),
+                          onFieldSubmitted: (_) => passwordFocus.requestFocus(),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Identifiant requis';
+                            }
+                            return null;
+                          },
                         ),
-                        filled: true,
-                        fillColor: Colors.white.withValues(alpha: 0.1),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            isDesktop ? 20 : 16,
-                          ),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            isDesktop ? 20 : 16,
-                          ),
-                          borderSide: const BorderSide(
-                            color: Colors.white24,
-                            width: 1,
-                          ),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          vertical: isDesktop ? 14 : (isTablet ? 12 : 10),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Email requis';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: isDesktop ? 14 : (isTablet ? 12 : 10)),
-
-                    // PASSWORD
-                    Obx(
-                      () => TextFormField(
-                        controller: passwordController,
-                        focusNode: passwordFocus,
-                        obscureText: obscurePassword.value,
-                        keyboardType: TextInputType.visiblePassword,
-                        textInputAction: TextInputAction.done,
-                        style: const TextStyle(color: Colors.white),
-                        onFieldSubmitted: (_) => _submitLogin(),
-                        onTapOutside: (_) =>
-                            FocusManager.instance.primaryFocus?.unfocus(),
-                        decoration: InputDecoration(
-                          labelText: 'Mot de passe',
-                          labelStyle: const TextStyle(color: Colors.white70),
-                          prefixIcon: const Icon(
-                            Icons.lock_outline,
-                            color: Colors.white,
-                          ),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              obscurePassword.value
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: Colors.white,
+                        SizedBox(height: (Get.height * 0.012).clamp(8.0, 12.0)),
+                        Obx(
+                          () => _textField(
+                            controller: passwordController,
+                            focusNode: passwordFocus,
+                            keyboardType: TextInputType.visiblePassword,
+                            textInputAction: TextInputAction.done,
+                            hint: 'Mot de passe',
+                            icon: Icons.lock_outline_rounded,
+                            iconColor: const Color(0xFF3D8DF3),
+                            obscureText: obscurePassword.value,
+                            onFieldSubmitted: (_) => _submitLogin(),
+                            suffix: IconButton(
+                              onPressed: () {
+                                obscurePassword.value = !obscurePassword.value;
+                              },
+                              icon: Icon(
+                                obscurePassword.value
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                color: const Color(0xFF6E7691),
+                              ),
                             ),
-                            onPressed: () {
-                              obscurePassword.value = !obscurePassword.value;
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Mot de passe requis';
+                              }
+                              return null;
                             },
                           ),
-                          filled: true,
-                          fillColor: Colors.white.withValues(alpha: 0.1),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              isDesktop ? 20 : 16,
-                            ),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              isDesktop ? 20 : 16,
-                            ),
-                            borderSide: const BorderSide(
-                              color: Colors.white24,
-                              width: 1,
-                            ),
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                            vertical: isDesktop ? 16 : (isTablet ? 14 : 12),
-                          ),
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Mot de passe requis';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    SizedBox(height: isDesktop ? 28 : (isTablet ? 24 : 24)),
-
-                    // BUTTON
-                    Obx(
-                      () => SizedBox(
-                        height: isDesktop ? 52 : (isTablet ? 50 : 48),
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E3A8A),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                isDesktop ? 20 : 16,
+                        SizedBox(height: (Get.height * 0.025).clamp(16.0, 22.0)),
+                        Obx(
+                          () => SizedBox(
+                            height: (Get.height * 0.07).clamp(48.0, 56.0),
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: AppTheme.cashierGradient,
+                                borderRadius: BorderRadius.circular(18),
+                                boxShadow: AppTheme.glassShadow,
+                              ),
+                              child: ElevatedButton(
+                                onPressed: authController.isLoading.value
+                                    ? null
+                                    : _submitLogin,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  disabledBackgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                ),
+                                child: authController.isLoading.value
+                                    ? const SizedBox(
+                                        height: 22,
+                                        width: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(
+                                            Icons.add_rounded,
+                                            color: Colors.white,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'Se connecter',
+                                            style: GoogleFonts.poppins(
+                                              color: Colors.white,
+                                              fontSize: isCompact ? 16 : 18,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                               ),
                             ),
                           ),
-                          onPressed: authController.isLoading.value
-                              ? null
-                              : _submitLogin,
-                          child: authController.isLoading.value
-                              ? const SizedBox(
-                                  height: 24,
-                                  width: 24,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(
-                                  'SE CONNECTER',
-                                  style: TextStyle(
-                                    fontSize: isDesktop ? 18 : 16,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.1,
-                                  ),
-                                ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _header(bool isCompact) {
+    final titleSize = isCompact ? 28.0 : 34.0;
+    final subtitleSize = isCompact ? 14.0 : 15.0;
+
+    return Row(
+      children: [
+        Container(
+          width: isCompact ? 54 : 62,
+          height: isCompact ? 54 : 62,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF57C9D5), Color(0xFF2A96C9)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: AppTheme.glassShadow,
+          ),
+          child: const Icon(
+            Icons.inventory_2_rounded,
+            color: Colors.white,
+            size: 30,
+          ),
+        ),
+        SizedBox(width: (Get.width * 0.03).clamp(8.0, 12.0)),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Connexion',
+                  style: GoogleFonts.poppins(
+                    fontSize: titleSize,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF181F31),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Gestion de stock',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(
+                  fontSize: subtitleSize,
+                  color: const Color(0xFF6E7691),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _textField({
+    required TextEditingController controller,
+    required FocusNode focusNode,
+    required TextInputType keyboardType,
+    required TextInputAction textInputAction,
+    required String hint,
+    required IconData icon,
+    required Color iconColor,
+    required String? Function(String?) validator,
+    void Function(String)? onFieldSubmitted,
+    Widget? suffix,
+    bool obscureText = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      focusNode: focusNode,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      obscureText: obscureText,
+      onFieldSubmitted: onFieldSubmitted,
+      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+      style: GoogleFonts.poppins(
+        color: const Color(0xFF1D2436),
+        fontWeight: FontWeight.w500,
+      ),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: GoogleFonts.poppins(color: const Color(0xFF8A91A8)),
+        prefixIcon: Padding(
+          padding: const EdgeInsets.only(left: 10, right: 8),
+          child: Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.16),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 18),
+          ),
+        ),
+        suffixIcon: suffix,
+        prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 42),
+      ),
+      validator: validator,
     );
   }
 }
