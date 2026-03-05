@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:product/bindings/auth_binding.dart';
+import 'package:product/bindings/dashboard_binding.dart';
 import 'package:product/bindings/entry_binding.dart';
 import 'package:product/bindings/output_binding.dart';
 import 'package:product/bindings/product_binding.dart';
@@ -34,13 +35,13 @@ class AppPages {
     GetPage(
       name: AppRoutes.adminDashboard,
       page: () => const AdminDashboardView(),
-      bindings: [AuthBinding()],
+      bindings: [AuthBinding(), DashboardBinding()],
       transition: Transition.fadeIn,
     ),
     GetPage(
       name: AppRoutes.cashierDashboard,
       page: () => const CashierDashboardView(),
-      bindings: [AuthBinding()],
+      bindings: [AuthBinding(), DashboardBinding()],
       transition: Transition.fadeIn,
     ),
     GetPage(

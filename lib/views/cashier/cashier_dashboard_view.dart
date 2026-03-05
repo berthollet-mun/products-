@@ -1,102 +1,64 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:product/controllers/auth_controller.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:product/controllers/dashboard_controller.dart';
 import 'package:product/routes/app_routes.dart';
-import 'package:product/utils/responsive_helper.dart';
 import 'package:product/views/common/role_guard.dart';
+import 'package:product/views/dashboard/widgets/dashboard_header.dart';
+import 'package:product/views/dashboard/widgets/dashboard_history_tile.dart';
+import 'package:product/views/dashboard/widgets/dashboard_stat_card.dart';
 
-class CashierDashboardView extends StatelessWidget {
+class CashierDashboardView extends GetView<DashboardController> {
   const CashierDashboardView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final authController = Get.find<AuthController>();
-    final isDesktop = ResponsiveHelper.isDesktop(context);
-    final isTablet = ResponsiveHelper.isTablet(context);
+    final size = MediaQuery.of(context).size;
+    final contentWidth = size.width > 700 ? 540.0 : size.width;
+    final gap = Get.height * 0.018;
 
     return RoleGuard(
       requiredRole: 'caissier',
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Tableau de bord Caissier'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: authController.logout,
-            ),
-          ],
-        ),
-        body: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: ResponsiveHelper.getMaxContentWidth(context),
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.point_of_sale,
-                    size: isDesktop ? 120 : (isTablet ? 100 : 80),
-                    color: Colors.teal,
-                  ),
-                  SizedBox(height: isDesktop ? 30 : (isTablet ? 25 : 20)),
-                  Text(
-                    'Bienvenue Caissier',
-                    style: TextStyle(
-                      fontSize: isDesktop ? 32 : (isTablet ? 28 : 24),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: isDesktop ? 40 : (isTablet ? 32 : 30)),
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isDesktop ? 48 : (isTablet ? 32 : 16),
-                    ),
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      padding: EdgeInsets.all(
-                        isDesktop ? 24 : (isTablet ? 20 : 16),
-                      ),
-                      mainAxisSpacing: isDesktop ? 24 : (isTablet ? 20 : 16),
-                      crossAxisSpacing: isDesktop ? 24 : (isTablet ? 20 : 16),
-                      childAspectRatio: isDesktop
-                          ? 1.2
-                          : (isTablet ? 1.0 : 1.1),
+        backgroundColor: const Color(0xFFEDEAF6),
+        body: SafeArea(
+          child: Center(
+            child: SizedBox(
+              width: contentWidth,
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                return RefreshIndicator(
+                  onRefresh: controller.loadDashboardData,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _buildMenuCard(
-                          'Produits',
-                          Icons.inventory_2,
-                          Colors.blue,
-                          () => Get.toNamed(AppRoutes.cashierProductList),
-                          context,
+                        DashboardHeader(
+                          greeting: 'Salut',
+                          name: controller.userName,
+                          accentColor: const Color(0xFF178B84),
                         ),
-                        _buildMenuCard(
-                          'Vente',
-                          Icons.shopping_cart,
-                          Colors.orange,
-                          () => Get.toNamed(AppRoutes.cashierOutputForm),
-                          context,
-                        ),
-                        _buildMenuCard(
-                          'Mes ventes',
-                          Icons.receipt_long,
-                          Colors.green,
-                          () => Get.toNamed(AppRoutes.cashierOutputList),
-                          context,
-                        ),
-                        _buildMenuCard(
-                          'Historique',
-                          Icons.history,
-                          Colors.indigo,
-                          () => Get.toNamed(AppRoutes.cashierHistory),
-                          context,
-                        ),
+                        SizedBox(height: gap),
+                        _cashierMainCard(),
+                        SizedBox(height: gap * 0.9),
+                        _quickStats(context),
+                        SizedBox(height: gap),
+                        _recentHistory(),
+                        SizedBox(height: gap),
+                        _weeklySalesChart(),
+                        SizedBox(height: gap * 0.9),
+                        _registerSaleButton(),
                       ],
                     ),
                   ),
-                ],
-              ),
+                );
+              }),
             ),
           ),
         ),
@@ -104,42 +66,445 @@ class CashierDashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuCard(
-    String title,
-    IconData icon,
-    Color color,
-    VoidCallback onPressed,
-    BuildContext context,
-  ) {
-    final isDesktop = ResponsiveHelper.isDesktop(context);
-    final isTablet = ResponsiveHelper.isTablet(context);
+  Widget _cashierMainCard() {
+    final cardHeight = (Get.height * 0.24).clamp(160.0, 220.0);
 
-    return Card(
-      elevation: isDesktop ? 6 : 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(isDesktop ? 16 : 12),
+    return Container(
+      height: cardHeight,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF26A69A), Color(0xFF0E7A86)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(isDesktop ? 16 : 12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: isDesktop ? 64 : (isTablet ? 56 : 48),
-              color: color,
+      child: Stack(
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 360;
+              final titleSize = compact ? 17.0 : 24.0;
+              final amountSize = compact ? 31.0 : 42.0;
+              final barWidth = compact ? 96.0 : 120.0;
+
+              return Stack(
+                children: [
+                  Positioned(
+                    right: 14,
+                    top: 20,
+                    bottom: 14,
+                    width: barWidth,
+                    child: Obx(
+                      () => BarChart(
+                        BarChartData(
+                          maxY:
+                              (controller.cashierBars.isEmpty
+                                  ? 20
+                                  : controller.cashierBars.reduce(
+                                      (a, b) => a > b ? a : b,
+                                    )) +
+                              6,
+                          minY: 0,
+                          alignment: BarChartAlignment.spaceAround,
+                          barTouchData: BarTouchData(enabled: false),
+                          gridData: const FlGridData(show: false),
+                          borderData: FlBorderData(show: false),
+                          titlesData: const FlTitlesData(show: false),
+                          barGroups: List.generate(
+                            controller.cashierBars.length.clamp(0, 6),
+                            (index) => BarChartGroupData(
+                              x: index,
+                              barRods: [
+                                BarChartRodData(
+                                  toY: controller.cashierBars[index],
+                                  width: compact ? 8 : 10,
+                                  borderRadius: BorderRadius.circular(8),
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFFB6FBF0), Colors.white],
+                                    begin: Alignment.bottomCenter,
+                                    end: Alignment.topCenter,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Obx(
+                      () => Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              'Tableau de bord Caissier',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: titleSize,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          SizedBox(height: compact ? 6 : 12),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              '€${controller.cashierAmount.value.toStringAsFixed(2)}',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: amountSize,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: compact ? 6 : 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                '+ ${controller.incomingToday.value + controller.outgoingToday.value} produits aujourd\'hui',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _quickStats(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final compact = width < 360;
+
+    return Column(
+      children: [
+        Obx(
+          () => Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color.fromRGBO(0, 0, 0, 0.05),
+                  blurRadius: 20,
+                  offset: Offset(0, 8),
+                ),
+              ],
             ),
-            SizedBox(height: isDesktop ? 16 : (isTablet ? 14 : 12)),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Derniere Vente',
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          color: const Color(0xFF7A8093),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          controller.lastSaleProduct.value,
+                          style: GoogleFonts.poppins(
+                            fontSize: compact ? 16 : 20,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF171E31),
+                          ),
+                        ),
+                      ),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '${controller.lastSaleQty.value} unites - ${controller.lastSaleTime.value}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: const Color(0xFF5C6379),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.bar_chart_rounded,
+                  color: Color(0xFF26A69A),
+                  size: 42,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Obx(
+          () => Row(
+            children: compact
+                ? [
+                    Expanded(
+                      child: DashboardStatCard(
+                        title: 'Stock Disponible',
+                        value: '${controller.availableStock.value}',
+                        icon: Icons.stacked_bar_chart_rounded,
+                        iconColor: const Color(0xFF26A69A),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: DashboardStatCard(
+                        title: 'Ruptures',
+                        value: '${controller.lowStockCount.value}',
+                        icon: Icons.warning_amber_rounded,
+                        iconColor: const Color(0xFFEA8E34),
+                      ),
+                    ),
+                  ]
+                : [
+                    Expanded(
+                      child: DashboardStatCard(
+                        title: 'Stock Disponible',
+                        value: '${controller.availableStock.value}',
+                        icon: Icons.stacked_bar_chart_rounded,
+                        iconColor: const Color(0xFF26A69A),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: DashboardStatCard(
+                        title: 'Ruptures',
+                        value: '${controller.lowStockCount.value}',
+                        icon: Icons.warning_amber_rounded,
+                        iconColor: const Color(0xFFEA8E34),
+                      ),
+                    ),
+                  ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _recentHistory() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Historique Recent',
+            style: GoogleFonts.poppins(
+              fontSize: 30,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF161E30),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Obx(() {
+          if (controller.recentHistory.isEmpty) {
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Text(
+                'Aucune operation recente',
+                style: GoogleFonts.poppins(color: const Color(0xFF7A8093)),
+              ),
+            );
+          }
+
+          return Column(
+            children: controller.recentHistory
+                .map(
+                  (item) => DashboardHistoryTile(
+                    productName: item.productName,
+                    quantity: item.quantity,
+                    timeLabel: item.timeLabel,
+                    isOutgoing: item.isOutgoing,
+                  ),
+                )
+                .toList(),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _weeklySalesChart() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromRGBO(0, 0, 0, 0.05),
+            blurRadius: 20,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Obx(
+        () => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: isDesktop ? 20 : (isTablet ? 18 : 16),
-                fontWeight: FontWeight.bold,
+              'Ventes de la Semaine',
+              style: GoogleFonts.poppins(
+                fontSize: 21,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF161E30),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: Get.height * 0.2,
+              child: BarChart(
+                BarChartData(
+                  maxY:
+                      (controller.cashierBars.isEmpty
+                          ? 20
+                          : controller.cashierBars.reduce(
+                              (a, b) => a > b ? a : b,
+                            )) +
+                      8,
+                  minY: 0,
+                  alignment: BarChartAlignment.spaceAround,
+                  barTouchData: BarTouchData(enabled: false),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: 5,
+                    getDrawingHorizontalLine: (value) =>
+                        FlLine(color: const Color(0xFFEDEEF4), strokeWidth: 1),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  titlesData: FlTitlesData(
+                    leftTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          const labels = [
+                            'Mon',
+                            'Tue',
+                            'Wed',
+                            'Thu',
+                            'Fri',
+                            'Sat',
+                            'Sun',
+                          ];
+                          final idx = value.toInt();
+                          if (idx < 0 || idx >= labels.length) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              labels[idx],
+                              style: GoogleFonts.poppins(
+                                color: const Color(0xFF70778D),
+                                fontSize: 12,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  barGroups: List.generate(
+                    controller.cashierBars.length.clamp(0, 7),
+                    (i) => BarChartGroupData(
+                      x: i,
+                      barRods: [
+                        BarChartRodData(
+                          toY: controller.cashierBars[i],
+                          width: 16,
+                          borderRadius: BorderRadius.circular(8),
+                          color: i == 0
+                              ? const Color(0xFF23B7CC)
+                              : const Color(0xFFC9D0DE),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _registerSaleButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: (Get.height * 0.07).clamp(50.0, 58.0),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF26A69A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          elevation: 0,
+        ),
+        onPressed: () => Get.toNamed(AppRoutes.cashierOutputForm),
+        child: Text(
+          '+ Enregistrer Vente',
+          style: GoogleFonts.poppins(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
         ),
       ),
     );
