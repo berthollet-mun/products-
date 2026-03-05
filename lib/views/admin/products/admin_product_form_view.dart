@@ -237,7 +237,7 @@ class _AdminProductFormViewState extends State<AdminProductFormView> {
         description: _descriptionController.text.trim(),
       );
       if (success) {
-        Get.back();
+        Get.back(result: true);
       }
       return;
     }
@@ -256,7 +256,7 @@ class _AdminProductFormViewState extends State<AdminProductFormView> {
 
     final success = await controller.updateProduct(updatedProduct);
     if (success) {
-      Get.back();
+      Get.back(result: true);
     }
   }
 }

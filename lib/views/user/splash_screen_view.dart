@@ -1,7 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import '../../routes/app_routes.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:product/routes/app_routes.dart';
+import 'package:product/theme/app_theme.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,34 +16,28 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   final PageController _pageController = PageController();
-  // SUPPRESSION DU 'final' pour permettre la mise à jour
   int _currentPage = 0;
 
-  final List<OnboardingPage> _pages = [
+  final List<OnboardingPage> _pages = const [
     OnboardingPage(
       title: 'Gestion de Stock',
-      description:
-          'Gérez facilement tous vos produits avec une interface intuitive et moderne',
-      icon: Icons.inventory_2,
-      color: Colors.blue,
+      description: 'Gerez vos produits facilement avec une interface claire.',
+      icon: Icons.inventory_2_rounded,
+      color: AppTheme.adminPrimary,
     ),
     OnboardingPage(
       title: 'Statistiques',
-      description:
-          'Suivez vos stocks et analysez vos données avec des graphiques détaillés',
-      icon: Icons.bar_chart,
-      color: Colors.green,
+      description: 'Suivez vos stocks et vos ventes en temps reel.',
+      icon: Icons.bar_chart_rounded,
+      color: AppTheme.cashierPrimary,
     ),
     OnboardingPage(
-      title: 'Contrôle Total',
-      description:
-          'Restez informé en temps réel et gardez le contrôle sur votre inventaire',
-      icon: Icons.security,
-      color: Colors.orange,
+      title: 'Controle Total',
+      description: 'Gardez le controle de votre inventaire a tout moment.',
+      icon: Icons.shield_rounded,
+      color: Color(0xFFEA8E34),
     ),
   ];
-
-  final Color darkBlue = const Color(0xFF1E3A8A);
 
   @override
   void dispose() {
@@ -64,159 +62,132 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. On utilise AnnotatedRegion pour forcer les icônes en BLANC
+    final width = Get.width;
+    final horizontalPadding = (width * 0.06).clamp(16.0, 28.0);
+    final maxWidth = math.min(width, 640.0);
+    final activePage = _pages[_currentPage];
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
-        statusBarColor:
-            Colors.transparent, // Transparent pour voir l'image derrière
-        statusBarIconBrightness: Brightness.light, // Icônes blanches (Android)
-        statusBarBrightness: Brightness.dark, // Icônes blanches (iOS)
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: const Color(0xFF1E0701),
-        // 2. SUPPRESSION de l'AppBar (elle créait le conflit)
         body: Stack(
           children: [
-            // GRADIENT BACKGROUND
             Positioned.fill(
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 500),
+                duration: const Duration(milliseconds: 400),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      _pages[_currentPage].color.withValues(alpha: 0.3),
-                      const Color(0xFF1E0701),
-                      const Color(0xFF1E0701),
+                      activePage.color.withValues(alpha: 0.16),
+                      const Color(0xFFF7F6FC),
+                      const Color(0xFFEDEAF6),
                     ],
                   ),
                 ),
               ),
             ),
-
-            // CONTENU
-            Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 50.0, right: 16.0),
-                  child: Align(
-                    alignment: Alignment.topRight,
-                    child: TextButton(
-                      onPressed: _navigateToLogin,
-                      child: const Text(
-                        'Passer',
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
-                      ),
+            SafeArea(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      (Get.height * 0.012).clamp(8.0, 14.0),
+                      horizontalPadding,
+                      (Get.height * 0.02).clamp(12.0, 20.0),
                     ),
-                  ),
-                ),
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentPage = index;
-                      });
-                    },
-                    itemCount: _pages.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                        child: Column(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: _navigateToLogin,
+                            child: Text(
+                              'Passer',
+                              style: GoogleFonts.poppins(
+                                color: const Color(0xFF656D86),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: PageView.builder(
+                            controller: _pageController,
+                            itemCount: _pages.length,
+                            onPageChanged: (index) {
+                              setState(() {
+                                _currentPage = index;
+                              });
+                            },
+                            itemBuilder: (context, index) {
+                              final page = _pages[index];
+                              return _onboardingPage(page);
+                            },
+                          ),
+                        ),
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Spacer(flex: 2),
-                            // LARGE ICON
-                            Container(
-                              width: 150,
-                              height: 150,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _pages[index].color.withValues(
-                                  alpha: 0.2,
-                                ),
-                                border: Border.all(
-                                  color: _pages[index].color.withValues(
-                                    alpha: 0.5,
-                                  ),
-                                  width: 2,
-                                ),
-                              ),
-                              child: Icon(
-                                _pages[index].icon,
-                                size: 80,
-                                color: _pages[index].color,
-                              ),
+                          children: List.generate(
+                            _pages.length,
+                            (index) => _pageIndicator(
+                              isActive: index == _currentPage,
+                              color: _pages[index].color,
                             ),
-                            const SizedBox(height: 40),
-                            Text(
-                              _pages[index].title,
-                              style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              _pages[index].description,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                color: Colors.white70,
-                                height: 1.5,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const Spacer(flex: 2),
-                          ],
+                          ),
                         ),
-                      );
-                    },
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    _pages.length,
-                    (index) => _buildPageIndicator(
-                      index == _currentPage,
-                      _pages[index].color,
+                        SizedBox(height: (Get.height * 0.018).clamp(10.0, 14.0)),
+                        SizedBox(
+                          height: (Get.height * 0.062).clamp(46.0, 54.0),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  activePage.color,
+                                  activePage.color.withValues(alpha: 0.82),
+                                ],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: AppTheme.glassShadow,
+                            ),
+                            child: ElevatedButton(
+                              onPressed: _nextPage,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                              ),
+                              child: Text(
+                                _currentPage == _pages.length - 1
+                                    ? 'Commencer'
+                                    : 'Suivant',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 40,
-                  ),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _nextPage,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _pages[_currentPage].color,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        _currentPage == _pages.length - 1
-                            ? 'COMMENCER'
-                            : 'SUIVANT',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ],
         ),
@@ -224,29 +195,83 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 
-  Widget _buildPageIndicator(bool isActive, Color color) {
+  Widget _onboardingPage(OnboardingPage page) {
+    final bubbleSize = (Get.width * 0.36).clamp(120.0, 170.0);
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: bubbleSize,
+          height: bubbleSize,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: page.color.withValues(alpha: 0.14),
+            border: Border.all(
+              color: page.color.withValues(alpha: 0.45),
+              width: 1.5,
+            ),
+            boxShadow: AppTheme.glassShadow,
+          ),
+          child: Icon(
+            page.icon,
+            size: bubbleSize * 0.45,
+            color: page.color,
+          ),
+        ),
+        SizedBox(height: (Get.height * 0.03).clamp(16.0, 28.0)),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            page.title,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: (Get.width * 0.08).clamp(26.0, 34.0),
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF161E30),
+            ),
+          ),
+        ),
+        SizedBox(height: (Get.height * 0.015).clamp(10.0, 16.0)),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: (Get.width * 0.05).clamp(12.0, 24.0)),
+          child: Text(
+            page.description,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: (Get.width * 0.043).clamp(14.0, 18.0),
+              color: const Color(0xFF606884),
+              height: 1.45,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _pageIndicator({required bool isActive, required Color color}) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 250),
       margin: const EdgeInsets.symmetric(horizontal: 4),
       width: isActive ? 24 : 8,
       height: 8,
       decoration: BoxDecoration(
-        color: isActive ? color : Colors.white38,
-        borderRadius: BorderRadius.circular(4),
+        color: isActive ? color : const Color(0xFFC8CDDD),
+        borderRadius: BorderRadius.circular(5),
       ),
     );
   }
 }
 
 class OnboardingPage {
-  final String title;
-  final String description;
-  final IconData icon;
-  final Color color;
-  OnboardingPage({
+  const OnboardingPage({
     required this.title,
     required this.description,
     required this.icon,
     required this.color,
   });
+
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color color;
 }

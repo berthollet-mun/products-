@@ -75,7 +75,7 @@ class _LoginViewState extends State<LoginView> {
                           focusNode: emailFocus,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
-                          hint: 'Nom utilisateur / Email',
+                          hint: 'Email',
                           icon: Icons.mail_outline_rounded,
                           iconColor: const Color(0xFF2B9FAF),
                           onFieldSubmitted: (_) => passwordFocus.requestFocus(),

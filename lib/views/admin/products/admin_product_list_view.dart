@@ -58,18 +58,18 @@ class _AdminProductListViewState extends State<AdminProductListView> {
                       constraints: BoxConstraints(maxWidth: maxWidth),
                       child: Column(
                         children: [
-                          PageActionHeader(
-                            title: 'Produits',
-                            buttonLabel: 'Ajouter',
-                            onPressed: () => Get.toNamed(AppRoutes.adminProductForm),
-                          ),
-                          SizedBox(height: gap),
                           SearchCardField(
                             controller: _searchController,
                             onChanged: (value) {
                               setState(() => _query = value.trim().toLowerCase());
                             },
                             hintText: 'Rechercher un produit',
+                          ),
+                          SizedBox(height: gap),
+                            PageActionHeader(
+                            title: 'Produits',
+                            buttonLabel: 'Ajouter produits',
+                            onPressed: () => Get.toNamed(AppRoutes.adminProductForm),
                           ),
                           SizedBox(height: gap),
                           if (controller.isLoading.value)
