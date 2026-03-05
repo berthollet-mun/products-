@@ -73,7 +73,7 @@ class _DashboardCaissierState extends State<DashboardCaissier> {
 
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_filled),
+              icon: Icon(Icons.home),
               label: 'Accueil',
             ),
             BottomNavigationBarItem(

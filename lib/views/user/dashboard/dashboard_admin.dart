@@ -62,7 +62,7 @@ class _DashboardAdminState extends State<DashboardAdmin> {
 
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.grid_view_rounded), // Style plus moderne
+            icon: Icon(Icons.home), // Style plus moderne
             label: 'Accueil',
           ),
           BottomNavigationBarItem(

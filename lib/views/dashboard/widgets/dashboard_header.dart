@@ -31,13 +31,14 @@ class DashboardHeader extends StatelessWidget {
               height: avatarSize,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-                image: const DecorationImage(
-                  image: AssetImage('assets/images/img1.jpg'),
-                  fit: BoxFit.cover,
-                ),
+                borderRadius: BorderRadius.circular(avatarSize / 2),
                 border: Border.all(color: const Color(0xFFE3E4EC)),
                 boxShadow: AppTheme.glassShadow,
+              ),
+              child: Icon(
+                Icons.person_rounded,
+                size: avatarSize * 0.58,
+                color: const Color(0xFF7A8197),
               ),
             ),
             SizedBox(width: compact ? 8 : 12),
@@ -70,26 +71,10 @@ class DashboardHeader extends StatelessWidget {
                 ],
               ),
             ),
-            _action(Icons.notifications_none_rounded, compact: compact),
-            SizedBox(width: compact ? 6 : 10),
-            _action(Icons.menu_rounded, compact: compact),
           ],
         );
       },
     );
   }
 
-  Widget _action(IconData icon, {required bool compact}) {
-    final buttonSize = compact ? 42.0 : 48.0;
-    return Container(
-      width: buttonSize,
-      height: buttonSize,
-      decoration: AppTheme.glassCard(color: const Color(0xFFF8F8FC)),
-      child: Icon(
-        icon,
-        color: const Color(0xFF3A4157),
-        size: compact ? 20 : 24,
-      ),
-    );
-  }
 }

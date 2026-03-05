@@ -20,22 +20,22 @@ class AdminBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final navHeight = (Get.height * 0.12).clamp(90.0, 112.0);
-    final addButton = (Get.width * 0.18).clamp(58.0, 70.0);
+    final navHeight = (Get.height * 0.11).clamp(84.0, 102.0);
+    final addButton = (Get.width * 0.17).clamp(56.0, 66.0);
     return SizedBox(
       height: navHeight,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Container(
-            margin: EdgeInsets.only(top: navHeight * 0.2),
+            margin: EdgeInsets.only(top: navHeight * 0.14),
             padding: EdgeInsets.symmetric(horizontal: Get.width * 0.02),
             decoration: AppTheme.glassCard(),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _navIcon(
-                  icon: Icons.dashboard_outlined,
+                  icon: Icons.home,
                   color: const Color(0xFF296FCF),
                   onTap: onDashboardTap,
                 ),
@@ -59,7 +59,7 @@ class AdminBottomNavigation extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: -4,
+            top: -2,
             left: 0,
             right: 0,
             child: Center(

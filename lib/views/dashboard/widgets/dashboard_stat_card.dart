@@ -28,7 +28,7 @@ class DashboardStatCard extends StatelessWidget {
         final titleSize = compact ? 13.0 : 16.0;
 
         return Container(
-          padding: EdgeInsets.all(compact ? 12 : 16),
+          padding: EdgeInsets.all(compact ? 20 : 26),
           decoration: AppTheme.glassCard(),
           child: Column(
             mainAxisSize: MainAxisSize.min,

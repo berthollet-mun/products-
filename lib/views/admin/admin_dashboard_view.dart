@@ -26,6 +26,27 @@ class AdminDashboardView extends GetView<DashboardController> {
     return RoleGuard(
       requiredRole: 'admin',
       child: Scaffold(
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              0,
+              horizontalPadding,
+              (Get.height * 0.008).clamp(4.0, 10.0),
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxBodyWidth),
+              child: AdminBottomNavigation(
+                onAddTap: () => Get.toNamed(AppRoutes.adminEntryForm),
+                onDashboardTap: () => Get.offNamed(AppRoutes.adminDashboard),
+                onProductsTap: () => Get.toNamed(AppRoutes.adminProductList),
+                onOutputsTap: () => Get.toNamed(AppRoutes.adminOutputList),
+                onUsersTap: () => Get.toNamed(AppRoutes.adminUserList),
+              ),
+            ),
+          ),
+        ),
         body: Container(
           decoration: const BoxDecoration(gradient: AppTheme.pageGradient),
           child: SafeArea(
@@ -46,7 +67,7 @@ class AdminDashboardView extends GetView<DashboardController> {
                           horizontalPadding,
                           sectionGap,
                           horizontalPadding,
-                          sectionGap,
+                          (Get.height * 0.09).clamp(70.0, 92.0),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -64,18 +85,6 @@ class AdminDashboardView extends GetView<DashboardController> {
                             _stockAlertSection(),
                             SizedBox(height: sectionGap),
                             _activitySection(),
-                            SizedBox(height: sectionGap),
-                            AdminBottomNavigation(
-                              onAddTap: () =>
-                                  Get.toNamed(AppRoutes.adminEntryForm),
-                              onDashboardTap: () =>
-                                  Get.offNamed(AppRoutes.adminDashboard),
-                              onProductsTap: () =>
-                                  Get.toNamed(AppRoutes.adminProductList),
-                              onOutputsTap: () =>
-                                  Get.toNamed(AppRoutes.adminOutputList),
-                              onUsersTap: () => Get.toNamed(AppRoutes.adminUserList),
-                            ),
                           ],
                         ),
                       ),

@@ -21,7 +21,6 @@ class _LoginViewState extends State<LoginView> {
   final TextEditingController passwordController = TextEditingController();
   final FocusNode emailFocus = FocusNode();
   final FocusNode passwordFocus = FocusNode();
-
   final RxBool obscurePassword = true.obs;
 
   @override
@@ -46,8 +45,8 @@ class _LoginViewState extends State<LoginView> {
   Widget build(BuildContext context) {
     final width = Get.width;
     final isCompact = width < 360;
-    final bodyWidth = math.min(width, 560.0);
-    final horizontalPadding = (width * 0.06).clamp(16.0, 36.0);
+    final bodyWidth = math.min(width, 460.0);
+    final horizontalPadding = (width * 0.05).clamp(14.0, 28.0);
 
     return Scaffold(
       body: Container(
@@ -57,31 +56,26 @@ class _LoginViewState extends State<LoginView> {
             child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(
                 horizontal: horizontalPadding,
-                vertical: (Get.height * 0.02).clamp(12.0, 24.0),
+                vertical: (Get.height * 0.018).clamp(10.0, 20.0),
               ),
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: bodyWidth),
                 child: Container(
-                  padding: EdgeInsets.all((width * 0.055).clamp(16.0, 28.0)),
+                  padding: EdgeInsets.all((width * 0.045).clamp(12.0, 18.0)),
                   decoration: AppTheme.glassCard(),
                   child: Form(
                     key: formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // ✅ HEADER CENTRÉ
                         _header(isCompact),
-
-                        SizedBox(
-                          height: (Get.height * 0.028).clamp(18.0, 28.0),
-                        ),
-
+                        SizedBox(height: (Get.height * 0.02).clamp(12.0, 16.0)),
                         _textField(
                           controller: emailController,
                           focusNode: emailFocus,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
-                          hint: 'Email',
+                          hint: 'Nom utilisateur / Email',
                           icon: Icons.mail_outline_rounded,
                           iconColor: const Color(0xFF2B9FAF),
                           onFieldSubmitted: (_) => passwordFocus.requestFocus(),
@@ -92,9 +86,7 @@ class _LoginViewState extends State<LoginView> {
                             return null;
                           },
                         ),
-
-                        SizedBox(height: (Get.height * 0.012).clamp(8.0, 12.0)),
-
+                        SizedBox(height: (Get.height * 0.01).clamp(8.0, 10.0)),
                         Obx(
                           () => _textField(
                             controller: passwordController,
@@ -115,6 +107,7 @@ class _LoginViewState extends State<LoginView> {
                                     ? Icons.visibility_off_outlined
                                     : Icons.visibility_outlined,
                                 color: const Color(0xFF6E7691),
+                                size: 20,
                               ),
                             ),
                             validator: (value) {
@@ -125,18 +118,14 @@ class _LoginViewState extends State<LoginView> {
                             },
                           ),
                         ),
-
-                        SizedBox(
-                          height: (Get.height * 0.025).clamp(16.0, 22.0),
-                        ),
-
+                        SizedBox(height: (Get.height * 0.018).clamp(12.0, 16.0)),
                         Obx(
                           () => SizedBox(
-                            height: (Get.height * 0.07).clamp(48.0, 56.0),
+                            height: (Get.height * 0.062).clamp(44.0, 50.0),
                             child: DecoratedBox(
                               decoration: BoxDecoration(
                                 gradient: AppTheme.cashierGradient,
-                                borderRadius: BorderRadius.circular(18),
+                                borderRadius: BorderRadius.circular(16),
                                 boxShadow: AppTheme.glassShadow,
                               ),
                               child: ElevatedButton(
@@ -149,31 +138,25 @@ class _LoginViewState extends State<LoginView> {
                                   shadowColor: Colors.transparent,
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(18),
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
                                 ),
                                 child: authController.isLoading.value
                                     ? const SizedBox(
-                                        height: 22,
-                                        width: 22,
+                                        height: 20,
+                                        width: 20,
                                         child: CircularProgressIndicator(
-                                          strokeWidth: 2.2,
+                                          strokeWidth: 2,
                                           color: Colors.white,
                                         ),
                                       )
-                                    : Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            'Se connecter',
-                                            style: GoogleFonts.poppins(
-                                              color: Colors.white,
-                                              fontSize: isCompact ? 16 : 18,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ],
+                                    : Text(
+                                        'Se connecter',
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.white,
+                                          fontSize: isCompact ? 14 : 15,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
                               ),
                             ),
@@ -191,25 +174,18 @@ class _LoginViewState extends State<LoginView> {
     );
   }
 
-  // ✅ TITRE "Connexion" EXACTEMENT AU MILIEU (Stack pro)
   Widget _header(bool isCompact) {
-    final titleSize = isCompact ? 28.0 : 34.0;
-
     return SizedBox(
-      height: 52,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Text(
-            'Connexion',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              fontSize: titleSize,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF181F31),
-            ),
+      height: 40,
+      child: Center(
+        child: Text(
+          'Connexion',
+          style: GoogleFonts.poppins(
+            fontSize: isCompact ? 22 : 25,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF181F31),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -238,24 +214,28 @@ class _LoginViewState extends State<LoginView> {
       style: GoogleFonts.poppins(
         color: const Color(0xFF1D2436),
         fontWeight: FontWeight.w500,
+        fontSize: 14,
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.poppins(color: const Color(0xFF8A91A8)),
+        hintStyle: GoogleFonts.poppins(
+          color: const Color(0xFF8A91A8),
+          fontSize: 13,
+        ),
         prefixIcon: Padding(
           padding: const EdgeInsets.only(left: 10, right: 8),
           child: Container(
-            width: 34,
-            height: 34,
+            width: 30,
+            height: 30,
             decoration: BoxDecoration(
               color: iconColor.withValues(alpha: 0.16),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: iconColor, size: 18),
+            child: Icon(icon, color: iconColor, size: 16),
           ),
         ),
         suffixIcon: suffix,
-        prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 42),
+        prefixIconConstraints: const BoxConstraints(minWidth: 46, minHeight: 38),
       ),
       validator: validator,
     );
